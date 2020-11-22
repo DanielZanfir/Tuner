@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context="com.github.Tuner.MainActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -16,10 +15,58 @@
         android:theme="@style/AppTheme"
         app:popupTheme="@style/AppTheme" />
 
-    <com.jaredrummler.materialspinner.MaterialSpinner
-        android:id="@+id/tuning"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+
+
+        <Switch
+
+            android:layout_below="@+id/my_toolbar"
+            android:checked="true"
+            android:id="@+id/simpleSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingTop="20dp"
+            />
+            <TextView
+                android:id="@+id/simpleText"
+                android:textColor="#ff9412"
+                android:paddingLeft="10dp"
+                android:paddingTop="20dp"
+                android:layout_below="@+id/simpleSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/AUTO"/>
+
+        <com.jaredrummler.materialspinner.MaterialSpinner
+            android:layout_below="@+id/my_toolbar"
+            android:layout_toRightOf="@+id/simpleSwitch"
+            android:id="@+id/tuning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/previousChord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/simpleText"
+       android:layout_marginLeft="50dp"
+        android:layout_marginTop="55dp"
+
+        />
+
+    <Button
+        android:id="@+id/nextChord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/previousChord"
+        android:layout_below="@+id/simpleText"
+        android:layout_marginTop="55dp"
+        android:layout_marginLeft="100dp"
+        />
+
+
+
+
 
     <com.github.Tuner.TunerView
         android:id="@+id/pitch"
@@ -27,4 +74,4 @@
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme" />
 
-</LinearLayout>
+</RelativeLayout>

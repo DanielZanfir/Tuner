@@ -14,21 +14,10 @@
     <string name="ok">OK</string>
 
     <string-array name="tunings">
-        <item>Chromatisch</item>
-        <item>Gitarre (Standard)</item>
-        <item>Gitarre (Drop D)</item>
-        <item>Gitarre (Drop C)</item>
-        <item>Gitarre (Drop C#)</item>
-        <item>Gitarre (Open G)</item>
-        <item>Bass (Standard)</item>
-        <item>Bass (Drop C)</item>
-        <item>Ukulele (Standard)</item>
-        <item>Ukulele (D tuning)</item>
-        <item>Geige (Standard)</item>
-        <item>Cello (Standard)</item>
-        <item>Viola (Standard)</item>
-        <item>Oud (Turkish standard)</item>
-        <item>Banjo (Standard)</item>
+        <item>Chromatic</item>
+        <item>Guitar (standard)</item>
+        <item>Bass (standard)</item>
+        <item>Violin (standard)</item>
     </string-array>
     <string-array name="notations">
         <item name="scientific">Wissenschaftlich</item>

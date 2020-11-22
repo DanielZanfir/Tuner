@@ -2,6 +2,9 @@ package com.github.Tuner;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -9,6 +12,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.media.Image;
 import android.text.TextPaint;
 
 import java.util.Locale;
@@ -45,6 +49,7 @@ class CanvasPainter {
     private boolean useScientificNotation;
     private int referencePitch;
 
+
     private CanvasPainter(Context context) {
         this.context = context;
     }
@@ -74,14 +79,7 @@ class CanvasPainter {
         redBackground = R.color.red_light;
         greenBackground = R.color.green_light;
         textColor = Color.BLACK;
-        if (isDarkModeEnabled()) {
-            int color = context.getResources().getColor(R.color.colorPrimaryDark);
-            this.canvas.drawColor(color);
 
-            redBackground = R.color.red_dark;
-            greenBackground = R.color.green_dark;
-            textColor = context.getResources().getColor(R.color.colorTextDarkCanvas);
-        }
 
         gaugeWidth = 0.45F * canvas.getWidth();
         x = canvas.getWidth() / 2F;
@@ -92,55 +90,71 @@ class CanvasPainter {
         textPaint.setTextSize(textSize);
 
         drawGauge();
+        drawImage(R.drawable.blank_button);
 
         if (!isAutoModeEnabled()) {
             Note[] tuningNotes = getCurrentTuning().getNotes();
             Note note = tuningNotes[getReferencePosition()];
-            drawText(x, y / 4F, note, symbolPaint);
+            drawText(x, canvas.getHeight() / 3F, note, symbolPaint);
         }
 
         if (pitchDifference != null) {
             int abs = Math.abs(getNearestDeviation());
             boolean shouldDraw = abs <= MAX_DEVIATION ||
-                    (abs <= MAX_DEVIATION * 2 && !isAutoModeEnabled());
+                    (abs <= MAX_DEVIATION * 50 && !isAutoModeEnabled());
             if (shouldDraw) {
                 setBackground();
-
                 drawGauge();
 
-                drawIndicator();
+                drawDeviation();  //desenez cu cat ii mai proasta nota
+                float x = canvas.getWidth() / 2F;
 
-                if (!isAutoModeEnabled()) {
-                    drawDeviation();
+                if(isAutoModeEnabled()){
+                    drawText(x, canvas.getHeight() / 3F, pitchDifference.closest, textPaint); //aici desenez nota cea mai apropiata cu octava si # la nota sus acolo
                 }
 
-                float x = canvas.getWidth() / 2F;
-                float y = canvas.getHeight() * 0.75f;
-
-                drawText(x, y, pitchDifference.closest, textPaint);
-            } else {
-                drawListeningIndicator();
             }
-        } else {
-            drawListeningIndicator();
+            else{
+                Bitmap clock=createIndicator(R.drawable.clock_arrow1,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F);
+                canvas.drawBitmap(clock,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F,gaugePaint);
+            }
         }
     }
 
     private void drawDeviation() {
         long rounded = Math.round(pitchDifference.deviation);
         String text = String.valueOf(rounded);
+        String flat = "To Flat";
+        String sharp = "To Sharp";
+        float offset = textPaint.measureText(flat) / 2F;
+        Bitmap clockFlat =  createIndicator(R.drawable.clock_arrow2,canvas.getWidth()/4F,canvas.getHeight() / 1.5F);
+        Bitmap clockSharp = createIndicator(R.drawable.clock_arrow3,canvas.getWidth()/2.4F,canvas.getHeight() / 1.53F);
 
         Rect bounds = new Rect();
         symbolPaint.getTextBounds(text, 0, text.length(), bounds);
-        int width = bounds.width();
+        float spaceWidth = gaugeWidth / NUMBER_OF_MARKS_PER_SIDE;
 
-        float xPos = x - width / 2F;
-        float yPos = canvas.getHeight() / 3F;
-
-        canvas.drawText(text, xPos, yPos, symbolPaint);
+        float xPosForSharpValues = x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(text) / 2F-100;
+        float xPosForFlatValues = x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(text) / 2F+100;
+        float yPos = canvas.getHeight() / 1.3F;
+        if (rounded < 0){
+            canvas.drawText(text, xPosForFlatValues, yPos, symbolPaint);
+            if (Math.abs(getNearestDeviation()) > TOLERANCE) {
+                canvas.drawBitmap(clockFlat,canvas.getWidth()/4F,canvas.getHeight() / 1.5F,gaugePaint);
+                canvas.drawText(flat,x-offset,canvas.getHeight() / 4F,textPaint);
+            }
+        }
+        else if (rounded>0){
+            canvas.drawText(text, xPosForSharpValues, yPos, symbolPaint);
+            if (Math.abs(getNearestDeviation()) > TOLERANCE) {
+                canvas.drawBitmap(clockSharp,canvas.getWidth()/2.4F,canvas.getHeight() / 1.53F,gaugePaint);
+                canvas.drawText(sharp,x-offset,canvas.getHeight() / 4F,textPaint);
+            }
+        }
     }
 
     private void drawGauge() {
+
         gaugePaint.setColor(textColor);
 
         int gaugeSize = context.getResources().getDimensionPixelSize(R.dimen.gaugeSize);
@@ -150,24 +164,15 @@ class CanvasPainter {
         numbersPaint.setTextSize(textSize);
         numbersPaint.setColor(textColor);
 
-        canvas.drawLine(x - gaugeWidth, y, x + gaugeWidth, y, gaugePaint);
 
         float spaceWidth = gaugeWidth / NUMBER_OF_MARKS_PER_SIDE;
-
-        int stepWidth = MAX_DEVIATION / NUMBER_OF_MARKS_PER_SIDE;
-        for (int i = 0; i <= MAX_DEVIATION; i = i + stepWidth) {
-            float factor = i / stepWidth;
-            drawMark(y, x + factor * spaceWidth, i);
-            drawMark(y, x - factor * spaceWidth, -i);
-        }
-
         drawSymbols(spaceWidth);
 
         displayReferencePitch();
     }
 
     private void displayReferencePitch() {
-        float y = canvas.getHeight() * 0.9f;
+        float y = canvas.getHeight() / 8F;
 
         Note note = new Note() {
             @Override
@@ -193,33 +198,11 @@ class CanvasPainter {
 
         float offset = paint.measureText(getNote(note.getName()) + getOctave(4)) * 0.75f;
 
-        drawText(x - gaugeWidth, y, note, paint);
+        drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset - 45, y, note, paint);
         canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
-                x - gaugeWidth + offset, y, paint);
+                x + NUMBER_OF_MARKS_PER_SIDE * offset, y, paint);
     }
 
-    private void drawListeningIndicator() {
-        int resourceId = R.drawable.ic_line_style_icons_mic;
-
-        if (ListenerFragment.IS_RECORDING) {
-            resourceId = R.drawable.ic_line_style_icons_mic_active;
-        }
-
-        Drawable drawable = ContextCompat.getDrawable(context, resourceId);
-
-        int x = (int) (canvas.getWidth() / 2F);
-        int y = (int) (canvas.getHeight() - canvas.getHeight() / 3F);
-
-        int width = Objects.requireNonNull(drawable).getIntrinsicWidth() * 2;
-        int height = drawable.getIntrinsicHeight() * 2;
-        drawable.setBounds(
-                x - width / 2, y,
-                x + width / 2,
-                y + height);
-
-
-        drawable.draw(canvas);
-    }
 
     private void drawSymbols(float spaceWidth) {
         String sharp = "♯";
@@ -229,7 +212,7 @@ class CanvasPainter {
         symbolPaint.setTextSize(symbolsTextSize);
         symbolPaint.setColor(textColor);
 
-        float yPos = canvas.getHeight() / 4F;
+        float yPos = canvas.getHeight() / 1.5F;
         canvas.drawText(sharp,
                 x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(sharp) / 2F,
                 yPos, symbolPaint);
@@ -240,44 +223,15 @@ class CanvasPainter {
                 symbolPaint);
     }
 
-    private void drawIndicator() {
-        float xPos = x + (getNearestDeviation() * gaugeWidth / MAX_DEVIATION);
-        float yPosition = y * 1.15f;
-
-        Matrix matrix = new Matrix();
-        float scalingFactor = numbersPaint.getTextSize() / 3;
-        matrix.setScale(scalingFactor, scalingFactor);
-
-        Path indicator = new Path();
-        indicator.moveTo(0, -2);
-        indicator.lineTo(1, 0);
-        indicator.lineTo(-1, 0);
-        indicator.close();
-
-        indicator.transform(matrix);
-
-        indicator.offset(xPos, yPosition);
-        canvas.drawPath(indicator, gaugePaint);
+    private Bitmap createIndicator(int clockID,float left,float top) {
+        Bitmap clock = decodeSampledBitmapFromResource(context.getResources(), clockID, 100, 100);
+        return clock;
     }
 
-    private void drawMark(float y, float xPos, int mark) {
-        String prefix = "";
-        if (mark > 0) {
-            prefix = "+";
-        }
-        String text = prefix + mark;
 
-        int yOffset = (int) (numbersPaint.getTextSize() / 6);
-        if (mark % 10 == 0) {
-            yOffset *= 2;
-        }
-        if (mark % 20 == 0) {
-            canvas.drawText(text, xPos - numbersPaint.measureText(text) / 2F,
-                    y - numbersPaint.getTextSize(), numbersPaint);
-            yOffset *= 2;
-        }
-
-        canvas.drawLine(xPos, y - yOffset, xPos, y + yOffset, gaugePaint);
+    private void drawImage(int cirlceID) {
+        Bitmap bitBtn = decodeSampledBitmapFromResource(context.getResources(), cirlceID, 100, 100);
+        canvas.drawBitmap(bitBtn,canvas.getWidth()/2.5F,canvas.getHeight() / 1.2F,gaugePaint);
     }
 
     private void drawText(float x, float y, Note note, Paint textPaint) {
@@ -298,7 +252,7 @@ class CanvasPainter {
         }
 
         canvas.drawText(sign, x + offset * 1.25f, y - offset * factor, paint);
-        canvas.drawText(octave, x + offset * 1.25f, y + offset * 0.5f, paint);
+        canvas.drawText(octave, x + offset * 1.25f, y + offset * 0.5f , paint);
 
         canvas.drawText(noteText, x - offset, y, textPaint);
     }
@@ -307,13 +261,6 @@ class CanvasPainter {
         if (useScientificNotation) {
             return octave;
         }
-
-        /*
-            The octave number in the (French notation) of Solfège is one less than the
-            corresponding octave number in the scientific pitch notation.
-            There is also no octave with the number zero
-            (see https://fr.wikipedia.org/wiki/Octave_(musique)#Solf%C3%A8ge).
-         */
         if (octave <= 1) {
             return octave - 2;
         }
@@ -330,18 +277,26 @@ class CanvasPainter {
     }
 
     private void setBackground() {
+        Bitmap clock=createIndicator(R.drawable.clock_arrow1,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F);
+        String perfect = "Perfect";
+        float offset = textPaint.measureText(perfect) / 2F;
+        float sgaugeWidth = 0.15F * canvas.getWidth();
+        drawImage(R.drawable.red_button);
         int color = redBackground;
         String text = "✗";
         if (Math.abs(getNearestDeviation()) <= TOLERANCE) {
+            drawImage(R.drawable.green_button);
+            canvas.drawText(perfect,x-offset,canvas.getHeight() / 4F,textPaint);
+            canvas.drawBitmap(clock,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F,gaugePaint);
             color = greenBackground;
             text = "✓";
         }
 
-        canvas.drawColor(context.getResources().getColor(color));
 
+        canvas.drawColor(context.getResources().getColor(color));
         canvas.drawText(text,
-                x + gaugeWidth - symbolPaint.measureText(text),
-                canvas.getHeight() * 0.9f, symbolPaint);
+                x + sgaugeWidth - symbolPaint.measureText(text) ,
+                canvas.getHeight() / 3F, symbolPaint);
     }
 
     private int getNearestDeviation() {
@@ -349,5 +304,44 @@ class CanvasPainter {
         int rounded = Math.round(deviation);
 
         return Math.round(rounded / 10f) * 10;
+    }
+
+    private int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
+    }
+
+    private  Bitmap decodeSampledBitmapFromResource(Resources res, int resId,
+                                                    int reqWidth, int reqHeight) {
+
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(res, resId, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeResource(res, resId, options);
     }
 }

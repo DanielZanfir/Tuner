@@ -12,18 +12,6 @@
         android:title="@string/set_reference_pitch"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/show_privacy_policy"
-        android:title="@string/privacy_policy"
-        app:showAsAction="never" />
 
-    <item
-        android:id="@+id/toggle_dark_mode"
-        android:title="@string/toggle_dark_mode"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/choose_tuning_mode"
-        android:title="@string/choose_tuning_mode"
-        app:showAsAction="never" />
 </menu>
+

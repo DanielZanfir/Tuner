@@ -1,16 +1,19 @@
 package com.github.Tuner;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager.LayoutParams;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.github.Tuner.ListenerFragment.TaskCallbacks;
 import com.jaredrummler.materialspinner.MaterialSpinner;
@@ -32,27 +35,25 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 
 public class MainActivity extends AppCompatActivity implements TaskCallbacks,
-        OnItemSelectedListener, OnValueChangeListener {
+        OnItemSelectedListener, OnValueChangeListener, View.OnClickListener {
 
     public static final int RECORD_AUDIO_PERMISSION = 0;
     public static final String PREFS_FILE = "prefs_file";
     public static final String USE_SCIENTIFIC_NOTATION = "use_scientific_notation";
     public static final String CURRENT_TUNING = "current_tuning";
+    public static final String SWITCH_STATE = "switch_state";
     protected static final String REFERENCE_PITCH = "reference_pitch";
     private static final String TAG_LISTENER_FRAGMENT = "listener_fragment";
     private static final String USE_DARK_MODE = "use_dark_mode";
     private static int tuningPosition = 0;
-    private static boolean isDarkModeEnabled;
     private static int referencePitch;
     private static int referencePosition;
+    private Switch mySwitch;
+    private Button nextButton,previousButton;
     private static boolean isAutoModeEnabled = true;
 
     public static Tuning getCurrentTuning() {
         return TuningMapper.getTuningFromPosition(tuningPosition);
-    }
-
-    public static boolean isDarkModeEnabled() {
-        return isDarkModeEnabled;
     }
 
     public static int getReferencePitch() {
@@ -67,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         return referencePosition - 1; //to account for the position of the AUTO option
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,18 +77,38 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         int permissionCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO);
 
+
+        enableTheme();
+
+        setContentView(R.layout.activity_main);
+        mySwitch = (Switch) findViewById(R.id.simpleSwitch);
+        nextButton = (Button) findViewById(R.id.nextChord);
+        previousButton = (Button) findViewById(R.id.previousChord);
+        nextButton.setOnClickListener(this);
+        previousButton.setOnClickListener(this);
+        mySwitch.setChecked(true);
+        SwitchState(mySwitch);
+        if(mySwitch.isChecked()){
+            nextButton.setEnabled(false);
+            nextButton.setVisibility(View.INVISIBLE);
+            previousButton.setEnabled(false);
+            previousButton.setVisibility(View.INVISIBLE);
+        }else {
+            nextButton.setEnabled(true);
+            nextButton.setVisibility(View.VISIBLE);     //aici ca sa se faca daca schimb instrumentul
+            previousButton.setEnabled(true);
+            previousButton.setVisibility(View.VISIBLE);
+            String[] displayedValues = getNotes();
+            referencePosition=displayedValues.length;
+        }
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             requestRecordAudioPermission();
         } else {
             startRecording();
         }
-
-        enableTheme();
-
-        setContentView(R.layout.activity_main);
-
         setTuning();
         setReferencePitch();
+
 
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -105,13 +127,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.show_privacy_policy: {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW,
-                        Uri.parse(getString(R.string.privacy_policy_link)));
-                startActivity(browserIntent);
-
-                break;
-            }
             case R.id.set_notation: {
                 final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
                         MODE_PRIVATE);
@@ -138,19 +153,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
                 break;
             }
-            case R.id.toggle_dark_mode: {
-                final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                        MODE_PRIVATE);
-                boolean currentlyUsingDarkMode = preferences.getBoolean(USE_DARK_MODE, true);
-
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(USE_DARK_MODE, !currentlyUsingDarkMode);
-                editor.apply();
-
-                recreate();
-
-                break;
-            }
             case R.id.set_reference_pitch: {
                 final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
                         MODE_PRIVATE);
@@ -167,20 +169,20 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
                 break;
             }
-            case R.id.choose_tuning_mode: {
-                final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                        MODE_PRIVATE);
-                NotePickerDialog dialog = new NotePickerDialog();
-
-                Bundle bundle = new Bundle();
-                bundle.putBoolean("use_scientific_notation", preferences.getBoolean(
-                        MainActivity.USE_SCIENTIFIC_NOTATION, true));
-                bundle.putInt("current_value", referencePosition);
-                dialog.setArguments(bundle);
-
-                dialog.setValueChangeListener(this);
-                dialog.show(getSupportFragmentManager(), "note_picker");
-            }
+//            case R.id.choose_tuning_mode: {
+//                final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
+//                        MODE_PRIVATE);
+//                NotePickerDialog dialog = new NotePickerDialog();
+//
+//                Bundle bundle = new Bundle();
+//                bundle.putBoolean("use_scientific_notation", preferences.getBoolean(
+//                        MainActivity.USE_SCIENTIFIC_NOTATION, true));
+//                bundle.putInt("current_value", referencePosition);
+//                dialog.setArguments(bundle);
+//
+//                dialog.setValueChangeListener(this);
+//                dialog.show(getSupportFragmentManager(), "note_picker");
+//            }
         }
 
         return false;
@@ -236,9 +238,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
         tuningPosition = position;
 
-        isAutoModeEnabled = true;
-        referencePosition = 0;
-
         recreate();
     }
 
@@ -257,12 +256,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
             TunerView tunerView = this.findViewById(R.id.pitch);
             tunerView.invalidate();
-        } else if ("note_picker".equalsIgnoreCase(tag)) {
-            isAutoModeEnabled = newValue == 0;
-
-            referencePosition = newValue;
-
-            recreate();
         }
     }
 
@@ -291,12 +284,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this,
                 Arrays.asList(getResources().getStringArray(R.array.tunings)));
 
-        if (isDarkModeEnabled) {
-            spinner.setTextColor(textColorDark);
-            spinner.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-            spinner.setTextColor(textColorDark);
-            spinner.setArrowColor(textColorDark);
-        }
+
 
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
@@ -306,12 +294,10 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     private void enableTheme() {
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
                 MODE_PRIVATE);
-        isDarkModeEnabled = preferences.getBoolean(USE_DARK_MODE, true);
+
 
         int mode = AppCompatDelegate.MODE_NIGHT_NO;
-        if (isDarkModeEnabled) {
-            mode = AppCompatDelegate.MODE_NIGHT_YES;
-        }
+
 
         AppCompatDelegate.setDefaultNightMode(mode);
     }
@@ -325,5 +311,85 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     private void requestRecordAudioPermission() {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},
                 RECORD_AUDIO_PERMISSION);
+    }
+
+    private void SwitchState(Switch mySwitch){
+
+
+        mySwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(mySwitch.isChecked()){
+                    mySwitch.setChecked(true);
+                    isAutoModeEnabled=true;
+                    nextButton.setEnabled(false);
+                    nextButton.setVisibility(View.INVISIBLE);
+                    previousButton.setEnabled(false);
+                    previousButton.setVisibility(View.INVISIBLE);
+                    referencePosition=0;
+                }else{
+                    mySwitch.setChecked(false);
+                    isAutoModeEnabled=false;
+                    nextButton.setEnabled(true);
+                    nextButton.setVisibility(View.VISIBLE);     //daca modific switchu sa se faca vizibile butoanele in cadrul aceluiasi instrument
+                    previousButton.setEnabled(true);
+                    previousButton.setVisibility(View.VISIBLE);
+                    String[] displayedValues = getNotes();
+                    referencePosition=displayedValues.length;
+                }
+            }
+        });
+    }
+
+    private String[] getNotes(){
+        SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
+                MODE_PRIVATE);
+         boolean useScientificNotation =
+                preferences.getBoolean(USE_SCIENTIFIC_NOTATION, true);
+        Note[] notes = getCurrentTuning().getNotes();
+        String[] displayedValues = new String[notes.length];
+
+        for (int i = 0; i < notes.length; i++) {
+            Note note = notes[i];
+            NoteName name = note.getName();
+            String noteName = name.getScientific();
+            int octave = note.getOctave();
+            if (!useScientificNotation) {
+                noteName = name.getSol();
+                
+                if (octave <= 1) {
+                    octave = octave - 2;
+                }
+
+                octave = octave - 1;
+            }
+            displayedValues[i] = noteName + note.getSign() + octave;
+        }
+        return  displayedValues;
+    }
+
+    @Override
+    public void onClick(View v) {
+        String[] displayedValues = getNotes();
+        switch (v.getId()){
+            case R.id.nextChord:
+                if (referencePosition==1){
+                    referencePosition=displayedValues.length;
+                    break;
+                }
+                if (referencePosition>1){
+                    referencePosition--;
+                }
+                break;
+            case R.id.previousChord:
+                if (referencePosition==displayedValues.length){
+                    referencePosition=1;
+                    break;
+                }
+                if (referencePosition<displayedValues.length){
+                    referencePosition++;
+                }
+                break;
+            default:referencePosition=displayedValues.length;
+        }
     }
 }
