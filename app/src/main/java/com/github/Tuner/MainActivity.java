@@ -87,20 +87,13 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         nextButton.setOnClickListener(this);
         previousButton.setOnClickListener(this);
         mySwitch.setChecked(true);
+        nextButton.setEnabled(false);
+        nextButton.setVisibility(View.INVISIBLE);
+        previousButton.setEnabled(false);
+        previousButton.setVisibility(View.INVISIBLE);
+
         SwitchState(mySwitch);
-        if(mySwitch.isChecked()){
-            nextButton.setEnabled(false);
-            nextButton.setVisibility(View.INVISIBLE);
-            previousButton.setEnabled(false);
-            previousButton.setVisibility(View.INVISIBLE);
-        }else {
-            nextButton.setEnabled(true);
-            nextButton.setVisibility(View.VISIBLE);     //aici ca sa se faca daca schimb instrumentul
-            previousButton.setEnabled(true);
-            previousButton.setVisibility(View.VISIBLE);
-            String[] displayedValues = getNotes();
-            referencePosition=displayedValues.length;
-        }
+
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             requestRecordAudioPermission();
         } else {
@@ -187,6 +180,33 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
         return false;
     }
+    @Override
+    public void onClick(View v) {
+        String[] displayedValues = getNotes();
+        switch (v.getId()){
+            case R.id.nextChord:
+                if (referencePosition==1){
+                    referencePosition=displayedValues.length;
+                    break;
+                }
+                if (referencePosition>1){
+                    referencePosition--;
+                }
+                break;
+            case R.id.previousChord:
+                if (referencePosition==displayedValues.length){
+                    referencePosition=1;
+                    break;
+                }
+                if (referencePosition<displayedValues.length){
+                    referencePosition++;
+                }
+                break;
+            default:referencePosition=displayedValues.length;
+        }
+        TunerView tunerView = this.findViewById(R.id.pitch);
+        tunerView.invalidate();
+    }
 
     @Override
     public void onProgressUpdate(PitchDifference pitchDifference) {
@@ -229,8 +249,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     @Override
     public void onItemSelected(MaterialSpinner view, int position, long id, Object item) {
-        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                MODE_PRIVATE);
+        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
 
         SharedPreferences.Editor editor = preferences.edit();
         editor.putInt(CURRENT_TUNING, position);
@@ -245,8 +264,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     public void onValueChange(NumberPicker picker, int oldValue, int newValue) {
         String tag = String.valueOf(picker.getTag());
         if ("reference_pitch_picker".equalsIgnoreCase(tag)) {
-            final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                    MODE_PRIVATE);
+            final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
 
             SharedPreferences.Editor editor = preferences.edit();
             editor.putInt(REFERENCE_PITCH, newValue);
@@ -274,17 +292,12 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     private void setTuning() {
-        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                MODE_PRIVATE);
+        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         tuningPosition = preferences.getInt(CURRENT_TUNING, 0);
 
-        int textColorDark = getResources().getColor(R.color.colorTextDark);
 
         MaterialSpinner spinner = findViewById(R.id.tuning);
-        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this,
-                Arrays.asList(getResources().getStringArray(R.array.tunings)));
-
-
+        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
 
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
@@ -292,25 +305,18 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     private void enableTheme() {
-        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                MODE_PRIVATE);
-
-
+        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         int mode = AppCompatDelegate.MODE_NIGHT_NO;
-
-
         AppCompatDelegate.setDefaultNightMode(mode);
     }
 
     private void setReferencePitch() {
-        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                MODE_PRIVATE);
+        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         referencePitch = preferences.getInt(REFERENCE_PITCH, 440);
     }
 
     private void requestRecordAudioPermission() {
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},
-                RECORD_AUDIO_PERMISSION);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION);
     }
 
     private void SwitchState(Switch mySwitch){
@@ -341,10 +347,8 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     private String[] getNotes(){
-        SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-                MODE_PRIVATE);
-         boolean useScientificNotation =
-                preferences.getBoolean(USE_SCIENTIFIC_NOTATION, true);
+        SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
+        boolean useScientificNotation = preferences.getBoolean(USE_SCIENTIFIC_NOTATION, true);
         Note[] notes = getCurrentTuning().getNotes();
         String[] displayedValues = new String[notes.length];
 
@@ -355,11 +359,9 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
             int octave = note.getOctave();
             if (!useScientificNotation) {
                 noteName = name.getSol();
-                
                 if (octave <= 1) {
                     octave = octave - 2;
                 }
-
                 octave = octave - 1;
             }
             displayedValues[i] = noteName + note.getSign() + octave;
@@ -367,29 +369,4 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         return  displayedValues;
     }
 
-    @Override
-    public void onClick(View v) {
-        String[] displayedValues = getNotes();
-        switch (v.getId()){
-            case R.id.nextChord:
-                if (referencePosition==1){
-                    referencePosition=displayedValues.length;
-                    break;
-                }
-                if (referencePosition>1){
-                    referencePosition--;
-                }
-                break;
-            case R.id.previousChord:
-                if (referencePosition==displayedValues.length){
-                    referencePosition=1;
-                    break;
-                }
-                if (referencePosition<displayedValues.length){
-                    referencePosition++;
-                }
-                break;
-            default:referencePosition=displayedValues.length;
-        }
-    }
 }
