@@ -11,9 +11,13 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.text.TextPaint;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -25,7 +29,7 @@ import static com.github.Tuner.MainActivity.*;
 
 class CanvasPainter {
 
-    private static final double TOLERANCE = 10D;
+    private static final double TOLERANCE = 2D;
     private static final int MAX_DEVIATION = 60;
     private static final int NUMBER_OF_MARKS_PER_SIDE = 6;
     private final Context context;
@@ -76,9 +80,12 @@ class CanvasPainter {
 
         this.canvas = canvas;
 
-        redBackground = R.color.red_light;
-        greenBackground = R.color.green_light;
-        textColor = Color.BLACK;
+       // int color = context.getResources().getColor(R.color.colorPrimaryDark);
+       // this.canvas.drawColor(color);
+
+        redBackground = R.color.red_dark;
+        greenBackground = R.color.green_dark;
+        textColor = Color.WHITE;
 
 
         gaugeWidth = 0.45F * canvas.getWidth();
@@ -88,7 +95,6 @@ class CanvasPainter {
         textPaint.setColor(textColor);
         int textSize = context.getResources().getDimensionPixelSize(R.dimen.noteTextSize);
         textPaint.setTextSize(textSize);
-
         drawGauge();
         drawImage(R.drawable.blank_button);
 
@@ -114,10 +120,6 @@ class CanvasPainter {
                 }
 
             }
-            else{
-                Bitmap clock=createIndicator(R.drawable.clock_arrow1,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F);
-                canvas.drawBitmap(clock,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F,gaugePaint);
-            }
         }
     }
 
@@ -127,8 +129,10 @@ class CanvasPainter {
         String flat = "To Flat";
         String sharp = "To Sharp";
         float offset = textPaint.measureText(flat) / 2F;
-        Bitmap clockFlat =  createIndicator(R.drawable.clock_arrow2,canvas.getWidth()/4F,canvas.getHeight() / 1.5F);
-        Bitmap clockSharp = createIndicator(R.drawable.clock_arrow3,canvas.getWidth()/2.4F,canvas.getHeight() / 1.53F);
+        ImageView left = MainActivity.getleftindicator();
+        ImageView right = MainActivity.getrightindicator();
+        AnimationDrawable leftI = MainActivity.getLeftAnimation();
+        AnimationDrawable rightI = MainActivity.getRightAnimation();
 
         Rect bounds = new Rect();
         symbolPaint.getTextBounds(text, 0, text.length(), bounds);
@@ -138,24 +142,38 @@ class CanvasPainter {
         float xPosForFlatValues = x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(text) / 2F+100;
         float yPos = canvas.getHeight() / 1.3F;
         if (rounded < 0){
+            left.setVisibility(View.VISIBLE);
+            right.setVisibility(View.INVISIBLE);
             canvas.drawText(text, xPosForFlatValues, yPos, symbolPaint);
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
-                canvas.drawBitmap(clockFlat,canvas.getWidth()/4F,canvas.getHeight() / 1.5F,gaugePaint);
                 canvas.drawText(flat,x-offset,canvas.getHeight() / 4F,textPaint);
+                leftI.start();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         else if (rounded>0){
+            left.setVisibility(View.INVISIBLE);
+            right.setVisibility(View.VISIBLE);
             canvas.drawText(text, xPosForSharpValues, yPos, symbolPaint);
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
-                canvas.drawBitmap(clockSharp,canvas.getWidth()/2.4F,canvas.getHeight() / 1.53F,gaugePaint);
                 canvas.drawText(sharp,x-offset,canvas.getHeight() / 4F,textPaint);
+                rightI.start();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
     private void drawGauge() {
 
-        gaugePaint.setColor(textColor);
+        gaugePaint.setColor(Color.RED);
 
         int gaugeSize = context.getResources().getDimensionPixelSize(R.dimen.gaugeSize);
         gaugePaint.setStrokeWidth(gaugeSize);
@@ -172,7 +190,7 @@ class CanvasPainter {
     }
 
     private void displayReferencePitch() {
-        float y = canvas.getHeight() / 8F;
+        float y = canvas.getHeight() / 6.5F;
 
         Note note = new Note() {
             @Override
@@ -223,12 +241,6 @@ class CanvasPainter {
                 symbolPaint);
     }
 
-    private Bitmap createIndicator(int clockID,float left,float top) {
-        Bitmap clock = decodeSampledBitmapFromResource(context.getResources(), clockID, 100, 100);
-        return clock;
-    }
-
-
     private void drawImage(int cirlceID) {
         Bitmap bitBtn = decodeSampledBitmapFromResource(context.getResources(), cirlceID, 100, 100);
         canvas.drawBitmap(bitBtn,canvas.getWidth()/2.5F,canvas.getHeight() / 1.2F,gaugePaint);
@@ -277,7 +289,6 @@ class CanvasPainter {
     }
 
     private void setBackground() {
-        Bitmap clock=createIndicator(R.drawable.clock_arrow1,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F);
         String perfect = "Perfect";
         float offset = textPaint.measureText(perfect) / 2F;
         float sgaugeWidth = 0.15F * canvas.getWidth();
@@ -287,7 +298,6 @@ class CanvasPainter {
         if (Math.abs(getNearestDeviation()) <= TOLERANCE) {
             drawImage(R.drawable.green_button);
             canvas.drawText(perfect,x-offset,canvas.getHeight() / 4F,textPaint);
-            canvas.drawBitmap(clock,canvas.getWidth()/2.5F,canvas.getHeight() / 2.5F,gaugePaint);
             color = greenBackground;
             text = "✓";
         }
@@ -344,4 +354,5 @@ class CanvasPainter {
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeResource(res, resId, options);
     }
+
 }

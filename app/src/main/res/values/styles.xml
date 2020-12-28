@@ -1,6 +1,12 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.DayNight" />
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight" >
+
+    </style>
+
+    <style name="SwitchTheme" parent="Theme.AppCompat.Light">
+        <item name="android:colorControlActivated">#FFFFFF</item>
+    </style>
 
 </resources>

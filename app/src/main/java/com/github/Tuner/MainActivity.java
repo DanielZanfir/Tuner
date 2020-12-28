@@ -3,6 +3,7 @@ package com.github.Tuner;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextThemeWrapper;
@@ -10,8 +11,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager.LayoutParams;
-import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -49,7 +51,9 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     private static int referencePitch;
     private static int referencePosition;
     private Switch mySwitch;
-    private Button nextButton,previousButton;
+    private ImageButton nextButton,previousButton;
+    private static ImageView LIndicator, RIndicator;
+    private static AnimationDrawable running_left_indicator,running_right_indicator;
     private static boolean isAutoModeEnabled = true;
 
     public static Tuning getCurrentTuning() {
@@ -68,6 +72,26 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         return referencePosition - 1; //to account for the position of the AUTO option
     }
 
+    public static ImageView getleftindicator(){
+        return LIndicator;
+    }
+
+    public static ImageView getrightindicator(){
+        return RIndicator;
+    }
+
+    public static AnimationDrawable getLeftAnimation(){
+        LIndicator.setImageResource(R.drawable.left_indicator);
+        running_left_indicator = (AnimationDrawable) LIndicator.getDrawable();
+        return running_left_indicator;
+    }
+    public static AnimationDrawable getRightAnimation(){
+        RIndicator.setImageResource(R.drawable.right_indicator);
+        running_right_indicator = (AnimationDrawable) RIndicator.getDrawable();
+        return running_right_indicator;
+    }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,12 +102,15 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                 Manifest.permission.RECORD_AUDIO);
 
 
-        enableTheme();
+
 
         setContentView(R.layout.activity_main);
+        setActivityBackgroundColor(0xFF212121);
         mySwitch = (Switch) findViewById(R.id.simpleSwitch);
-        nextButton = (Button) findViewById(R.id.nextChord);
-        previousButton = (Button) findViewById(R.id.previousChord);
+        nextButton = (ImageButton) findViewById(R.id.nextChord);
+        previousButton = (ImageButton) findViewById(R.id.previousChord);
+        LIndicator = (ImageView)findViewById(R.id.indicator);
+        RIndicator = (ImageView)findViewById(R.id.indicator1);
         nextButton.setOnClickListener(this);
         previousButton.setOnClickListener(this);
         mySwitch.setChecked(true);
@@ -106,9 +133,11 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
-        myToolbar.setTitle(R.string.app_name);
+        myToolbar.setTitle("");
         myToolbar.showOverflowMenu();
+        myToolbar.setBackgroundColor(0xfff5c71a);
         setSupportActionBar(myToolbar);
+
     }
 
     @Override
@@ -121,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.set_notation: {
+
                 final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
                         MODE_PRIVATE);
                 final boolean useScientificNotation =
@@ -162,20 +192,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
                 break;
             }
-//            case R.id.choose_tuning_mode: {
-//                final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
-//                        MODE_PRIVATE);
-//                NotePickerDialog dialog = new NotePickerDialog();
-//
-//                Bundle bundle = new Bundle();
-//                bundle.putBoolean("use_scientific_notation", preferences.getBoolean(
-//                        MainActivity.USE_SCIENTIFIC_NOTATION, true));
-//                bundle.putInt("current_value", referencePosition);
-//                dialog.setArguments(bundle);
-//
-//                dialog.setValueChangeListener(this);
-//                dialog.show(getSupportFragmentManager(), "note_picker");
-//            }
         }
 
         return false;
@@ -294,21 +310,21 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     private void setTuning() {
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         tuningPosition = preferences.getInt(CURRENT_TUNING, 0);
-
+        int textColorDark = getResources().getColor(R.color.colorTextDark);
 
         MaterialSpinner spinner = findViewById(R.id.tuning);
         MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
+
+        spinner.setTextColor(textColorDark);
+        spinner.setBackgroundColor(0xfff5c71a);
+        spinner.setTextColor(textColorDark);
+        spinner.setArrowColor(textColorDark);
 
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
         spinner.setSelectedIndex(tuningPosition);
     }
 
-    private void enableTheme() {
-        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
-        int mode = AppCompatDelegate.MODE_NIGHT_NO;
-        AppCompatDelegate.setDefaultNightMode(mode);
-    }
 
     private void setReferencePitch() {
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
@@ -332,6 +348,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     previousButton.setEnabled(false);
                     previousButton.setVisibility(View.INVISIBLE);
                     referencePosition=0;
+                    Toast.makeText(getApplicationContext(),"Auto Mode is enabled",Toast.LENGTH_SHORT).show();
                 }else{
                     mySwitch.setChecked(false);
                     isAutoModeEnabled=false;
@@ -341,6 +358,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     previousButton.setVisibility(View.VISIBLE);
                     String[] displayedValues = getNotes();
                     referencePosition=displayedValues.length;
+                    Toast.makeText(getApplicationContext(),"Auto Mode is disabled",Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -368,5 +386,11 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         }
         return  displayedValues;
     }
+
+    public void setActivityBackgroundColor(int color) {
+        View view = this.getWindow().getDecorView();
+        view.setBackgroundColor(color);
+    }
+
 
 }

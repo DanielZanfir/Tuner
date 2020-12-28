@@ -20,8 +20,18 @@
     <string-array name="tunings">
         <item>Chromatic</item>
         <item>Guitar (standard)</item>
+        <item>Guitar (Drop D)</item>
+        <item>Guitar (Drop C)</item>
+        <item>Guitar (Drop C#)</item>
+        <item>Guitar (Open G)</item>
         <item>Bass (standard)</item>
+        <item>Bass (Drop C)</item>
+        <item>Ukulele (standard)</item>
+        <item>Ukulele (D tuning)</item>
         <item>Violin (standard)</item>
+        <item>Cello (standard)</item>
+        <item>Viola (standard)</item>
+        <item>Banjo (standard)</item>
     </string-array>
     <string-array name="notations">
         <item name="scientific">Scientific pitch notation</item>
