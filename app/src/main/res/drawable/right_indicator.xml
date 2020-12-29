@@ -3,17 +3,17 @@
     android:oneshot="true"
     android:visible="false">
 
-    <item android:drawable="@drawable/r_arrow_01" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_02" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_03" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_04" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_05" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_06" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_07" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_08" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_09" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_10" android:duration="100"/>
-    <item android:drawable="@drawable/r_arrow_11" android:duration="100"/>
+    <item android:drawable="@drawable/r_arrow_01" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_02" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_03" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_04" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_05" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_06" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_07" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_08" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_09" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_10" android:duration="75"/>
+    <item android:drawable="@drawable/r_arrow_11" android:duration="75"/>
 
 
 </animation-list>

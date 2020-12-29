@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     public static final String SWITCH_STATE = "switch_state";
     protected static final String REFERENCE_PITCH = "reference_pitch";
     private static final String TAG_LISTENER_FRAGMENT = "listener_fragment";
-    private static final String USE_DARK_MODE = "use_dark_mode";
     private static int tuningPosition = 0;
     private static int referencePitch;
     private static int referencePosition;
@@ -105,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
 
         setContentView(R.layout.activity_main);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         setActivityBackgroundColor(0xFF212121);
         mySwitch = (Switch) findViewById(R.id.simpleSwitch);
         nextButton = (ImageButton) findViewById(R.id.nextChord);
