@@ -5,7 +5,7 @@ import com.github.Tuner.NoteName;
 import com.github.Tuner.Tuning;
 
 import static com.github.Tuner.NoteName.*;
-
+//aici se afla notele pentru acordarea instrumentului chitara
 public class GuitarTuning implements Tuning {
 
     @Override
@@ -20,7 +20,7 @@ public class GuitarTuning implements Tuning {
 
     public enum Pitch implements Note {
 
-        E4(E, 4),
+        E4(E, 4), //E este de fapt un valoare E("E", "Mi") a Enumului NoteName
         B3(B, 3),
         G3(G, 3),
         D3(D, 3),

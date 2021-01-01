@@ -7,6 +7,8 @@ import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
+//TunerView este un View personalizat pentru a putea afisa pe ecran informatiile despre nota cantata (Nume nota, octava, semn, diferenta in centisunete, etc)
+//TunerView se foloseste de un CanvasPainter pentru a arata pe ecran acele informatii
 public class TunerView extends View {
 
     private CanvasPainter canvasPainter;
@@ -22,6 +24,7 @@ public class TunerView extends View {
         canvasPainter = CanvasPainter.with(getContext());
     }
 
+    //cea mai importanta metoda pentru a putea desena pe ecran
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);

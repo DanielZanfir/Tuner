@@ -2,7 +2,7 @@ package com.github.Tuner;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
+//aceasta este o clasa de reprezentare a notei cele mai apropiate si diferenta in centisunete
 class PitchDifference implements Parcelable {
 
     public static final Creator<PitchDifference> CREATOR = new Creator<PitchDifference>() {

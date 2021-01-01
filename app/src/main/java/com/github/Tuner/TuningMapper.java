@@ -16,7 +16,8 @@ import com.github.Tuner.tuning.UkuleleDTuning;
 import com.github.Tuner.tuning.UkuleleTuning;
 import com.github.Tuner.tuning.ViolaTuning;
 import com.github.Tuner.tuning.ViolinTuning;
-
+//ne returneaza un instrument muzical in functie de ce se alege din spinner pentru a sti notele acestuia
+//mapeaza pozitia aleasa din spinner la un instrument
 class TuningMapper {
 
     private static final int CHROMATIC_TUNING_POSITION = 0;

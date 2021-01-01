@@ -7,9 +7,11 @@ import java.util.Map;
 
 class Sampler {
 
+    //Sampler calculeaza average dintr-o lista cu un nr dat de deviatii
+    //in cazul nostru un average pentru 15 deviatii
     static PitchDifference calculateAverageDifference(List<PitchDifference> samples) {
-        Note mostFrequentNote = extractMostFrequentNote(samples);
-        List<PitchDifference> filteredSamples = filterByNote(samples, mostFrequentNote);
+        Note mostFrequentNote = extractMostFrequentNote(samples); //se extrage din samples cea mai frecventa nota apropiata
+        List<PitchDifference> filteredSamples = filterByNote(samples, mostFrequentNote); //lista deviatilor doar pentru cea mai frecventa nota apropiata
 
         double deviationSum = 0;
         int sameNoteCount = 0;
@@ -27,18 +29,7 @@ class Sampler {
         return null;
     }
 
-    static List<PitchDifference> filterByNote(List<PitchDifference> samples, Note note) {
-        List<PitchDifference> filteredSamples = new ArrayList<>();
-
-        for (PitchDifference sample : samples) {
-            if (sample.closest == note) {
-                filteredSamples.add(sample);
-            }
-        }
-
-        return filteredSamples;
-    }
-
+    //metode ajutoatoare pentru determinarea celei mai frecevente note apropiate din lista de esantioane (samples)
     static Note extractMostFrequentNote(List<PitchDifference> samples) {
         Map<Note, Integer> noteFrequencies = new HashMap<>();
 
@@ -64,4 +55,19 @@ class Sampler {
 
         return mostFrequentNote;
     }
+
+    //filtrarea listei de esantioane (samples) astfel incat ea sa contina doar esantioane ale notei apropiate cele mai frecvente
+    static List<PitchDifference> filterByNote(List<PitchDifference> samples, Note note) {
+        List<PitchDifference> filteredSamples = new ArrayList<>();
+
+        for (PitchDifference sample : samples) {
+            if (sample.closest == note) {
+                filteredSamples.add(sample);
+            }
+        }
+
+        return filteredSamples;
+    }
+
+
 }

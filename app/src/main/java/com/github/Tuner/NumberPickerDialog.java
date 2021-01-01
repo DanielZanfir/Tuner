@@ -9,6 +9,7 @@ import com.shawnlin.numberpicker.NumberPicker;
 import androidx.appcompat.app.AlertDialog.Builder;
 import androidx.fragment.app.DialogFragment;
 
+//dialogul/fereastra pentru alegerea freceventei de referinta
 public class NumberPickerDialog extends DialogFragment {
 
     private NumberPicker.OnValueChangeListener valueChangeListener;

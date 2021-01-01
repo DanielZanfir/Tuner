@@ -29,10 +29,12 @@ import static com.github.Tuner.MainActivity.*;
 
 class CanvasPainter {
 
-    private static final double TOLERANCE = 2D;
-    private static final int MAX_DEVIATION = 60;
+    private static final double TOLERANCE = 2D; //Toleranta este marja de eroare care ne spune daca nota este sau nu corect acordata
+    private static final int MAX_DEVIATION = 60;//MAX_DEVIATION este intervalul pentru fiecare nota
+    // Exemplu: daca avem nota G3 care are valoarea de 100 de centisunte. Aplicatia face ca nota G3 sa aibe intevalul (40,160)
     private static final int NUMBER_OF_MARKS_PER_SIDE = 6;
     private final Context context;
+
 
     private Canvas canvas;
 
@@ -80,9 +82,6 @@ class CanvasPainter {
 
         this.canvas = canvas;
 
-       // int color = context.getResources().getColor(R.color.colorPrimaryDark);
-       // this.canvas.drawColor(color);
-
         redBackground = R.color.red_dark;
         greenBackground = R.color.green_dark;
         textColor = Color.WHITE;
@@ -95,28 +94,31 @@ class CanvasPainter {
         textPaint.setColor(textColor);
         int textSize = context.getResources().getDimensionPixelSize(R.dimen.noteTextSize);
         textPaint.setTextSize(textSize);
-        drawGauge();
+        drawSymbols();
+        displayReferencePitch();
         drawImage(R.drawable.blank_button);
 
         if (!isAutoModeEnabled()) {
+            //daca modul auto este OFF, sa afisam notele instrumentului selectat pe ecran
             Note[] tuningNotes = getCurrentTuning().getNotes();
             Note note = tuningNotes[getReferencePosition()];
             drawText(x, canvas.getHeight() / 3F, note, symbolPaint);
         }
 
         if (pitchDifference != null) {
-            int abs = Math.abs(getNearestDeviation());
-            boolean shouldDraw = abs <= MAX_DEVIATION ||
-                    (abs <= MAX_DEVIATION * 50 && !isAutoModeEnabled());
+            //daca aplicatia a detectat o nota
+            int abs = Math.abs(getNearestDeviation()); //luam deviatia notei
+            boolean shouldDraw = abs <= MAX_DEVIATION || (abs <= MAX_DEVIATION * 50 && !isAutoModeEnabled());
             if (shouldDraw) {
                 setBackground();
-                drawGauge();
+                drawSymbols();
+                displayReferencePitch();
 
-                drawDeviation();  //desenez cu cat ii mai proasta nota
+                drawDeviation();  //desenam deviatia notei
                 float x = canvas.getWidth() / 2F;
 
                 if(isAutoModeEnabled()){
-                    drawText(x, canvas.getHeight() / 3F, pitchDifference.closest, textPaint); //aici desenez nota cea mai apropiata cu octava si # la nota sus acolo
+                    drawText(x, canvas.getHeight() / 3F, pitchDifference.closest, textPaint); //deseneaza nota pe care o detecteaza aplicatia
                 }
 
             }
@@ -124,6 +126,7 @@ class CanvasPainter {
     }
 
     private void drawDeviation() {
+        //metoda pentru a desena:deviatia(Numarul de centisunete),un mesaj care ne spune cum este nota (Flat, Sharp), pendulul si animatia pentru pendul
         long rounded = Math.round(pitchDifference.deviation);
         String text = String.valueOf(rounded);
         String flat = "To Flat";
@@ -171,25 +174,9 @@ class CanvasPainter {
         }
     }
 
-    private void drawGauge() {
-
-        gaugePaint.setColor(Color.RED);
-
-        int gaugeSize = context.getResources().getDimensionPixelSize(R.dimen.gaugeSize);
-        gaugePaint.setStrokeWidth(gaugeSize);
-
-        int textSize = context.getResources().getDimensionPixelSize(R.dimen.numbersTextSize);
-        numbersPaint.setTextSize(textSize);
-        numbersPaint.setColor(textColor);
-
-
-        float spaceWidth = gaugeWidth / NUMBER_OF_MARKS_PER_SIDE;
-        drawSymbols(spaceWidth);
-
-        displayReferencePitch();
-    }
 
     private void displayReferencePitch() {
+        //metoda pentru a afisa frecventa de referinta
         float y = canvas.getHeight() / 6.5F;
 
         Note note = new Note() {
@@ -216,13 +203,24 @@ class CanvasPainter {
 
         float offset = paint.measureText(getNote(note.getName()) + getOctave(4)) * 0.75f;
 
-        drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset - 45, y, note, paint);
-        canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
-                x + NUMBER_OF_MARKS_PER_SIDE * offset, y, paint);
+        //pozitia x pe ecran difera pentru frecventa de referinta in functie de notatie
+        if(useScientificNotation){
+            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset - 45, y, note, paint);
+            canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
+                    x + NUMBER_OF_MARKS_PER_SIDE * offset, y, paint);
+        }
+        else{
+            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset-150, y, note, paint);
+            canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
+                    x + NUMBER_OF_MARKS_PER_SIDE * offset-100, y, paint);
+        }
+
     }
 
 
-    private void drawSymbols(float spaceWidth) {
+    private void drawSymbols() {
+        //metoda pentru a afisa simbolurile pentru Flat, Sharp
+        float spaceWidth = gaugeWidth / NUMBER_OF_MARKS_PER_SIDE;
         String sharp = "♯";
         String flat = "♭";
 
@@ -241,12 +239,16 @@ class CanvasPainter {
                 symbolPaint);
     }
 
+
+
     private void drawImage(int cirlceID) {
+        //metoda pentru a creea cercul de la baza pendulului
         Bitmap bitBtn = decodeSampledBitmapFromResource(context.getResources(), cirlceID, 100, 100);
         canvas.drawBitmap(bitBtn,canvas.getWidth()/2.5F,canvas.getHeight() / 1.2F,gaugePaint);
     }
 
     private void drawText(float x, float y, Note note, Paint textPaint) {
+        //drawText afiseaza pe ecran nota, octava si semnul acesteia
         String noteText = getNote(note.getName());
         float offset = textPaint.measureText(noteText) / 2F;
 
@@ -265,11 +267,12 @@ class CanvasPainter {
 
         canvas.drawText(sign, x + offset * 1.25f, y - offset * factor, paint);
         canvas.drawText(octave, x + offset * 1.25f, y + offset * 0.5f , paint);
-
         canvas.drawText(noteText, x - offset, y, textPaint);
+
     }
 
     private int getOctave(int octave) {
+        //aici se ia octava notei
         if (useScientificNotation) {
             return octave;
         }
@@ -281,6 +284,7 @@ class CanvasPainter {
     }
 
     private String getNote(NoteName name) {
+        //aici se ia numele notei in functie de notatia selectata (solfegiu sau stintific)
         if (useScientificNotation) {
             return name.getScientific();
         }
@@ -289,6 +293,7 @@ class CanvasPainter {
     }
 
     private void setBackground() {
+        //metoda prin care schimbam culoarea background-ului si a cercului de la baza pendulului
         String perfect = "Perfect";
         float offset = textPaint.measureText(perfect) / 2F;
         float sgaugeWidth = 0.15F * canvas.getWidth();
@@ -302,7 +307,6 @@ class CanvasPainter {
             text = "✓";
         }
 
-
         canvas.drawColor(context.getResources().getColor(color));
         canvas.drawText(text,
                 x + sgaugeWidth - symbolPaint.measureText(text) ,
@@ -310,12 +314,15 @@ class CanvasPainter {
     }
 
     private int getNearestDeviation() {
+        //metoda pentru a lua deviatia notei receptionate de aplicatie
         float deviation = (float) pitchDifference.deviation;
         int rounded = Math.round(deviation);
 
         return Math.round(rounded / 10f) * 10;
     }
 
+
+    //metode ajutatoare pentru redimensioarea PNG-urilor
     private int calculateInSampleSize(
             BitmapFactory.Options options, int reqWidth, int reqHeight) {
         // Raw height and width of image

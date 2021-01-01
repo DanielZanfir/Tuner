@@ -1,5 +1,6 @@
 package com.github.Tuner;
-
+//aici se salveaza numele tuturor notelor in muzica in format stintiific si solfegiu
+//doar numele, fara octava si semn
 public enum NoteName {
 
     C("C", "Do"),
@@ -26,13 +27,4 @@ public enum NoteName {
         return sol;
     }
 
-    public static NoteName fromScientificName(String scientificName) {
-        for (NoteName noteName : NoteName.values()) {
-            if (noteName.getScientific().equalsIgnoreCase(scientificName)) {
-                return noteName;
-            }
-        }
-
-        throw new IllegalArgumentException("Could not convert from name: " + scientificName);
-    }
 }

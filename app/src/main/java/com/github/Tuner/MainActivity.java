@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     public static int getReferencePosition() {
-        return referencePosition - 1; //to account for the position of the AUTO option
+        return referencePosition - 1; //ca sa se potriveasca pentru pozitia in modul AUTO
     }
 
     public static ImageView getleftindicator(){
@@ -96,26 +96,29 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
-        int permissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO);
-
-
-
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
 
         setContentView(R.layout.activity_main);
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        setActivityBackgroundColor(0xFF212121);
-        mySwitch = (Switch) findViewById(R.id.simpleSwitch);
+        setActivityBackgroundColor(0xFF212121); //setarea culorii fundalului pe negru
+
+        mySwitch = (Switch) findViewById(R.id.simpleSwitch); //mySwitch este gliderul pentru controlul modului de AUTO
+
+        //cand AUTO este OFF cu nextButton si cu previousButton selectam o singura nota pe care vrem sa o acordam din setul de note specific instrumentului selectat
         nextButton = (ImageButton) findViewById(R.id.nextChord);
         previousButton = (ImageButton) findViewById(R.id.previousChord);
+
+        //ImageView-urile pentru aniamtia pendulului spre stanga/dreapta
         LIndicator = (ImageView)findViewById(R.id.indicator);
         RIndicator = (ImageView)findViewById(R.id.indicator1);
+
         nextButton.setOnClickListener(this);
         previousButton.setOnClickListener(this);
-        mySwitch.setChecked(true);
+
+        mySwitch.setChecked(true); //Modul Auto este intodeauna ON la pornirea aplicatiei
         nextButton.setEnabled(false);
-        nextButton.setVisibility(View.INVISIBLE);
+        nextButton.setVisibility(View.INVISIBLE); //Asta inseamna ca butoanele pentru selectarea unei note sunt inactive
         previousButton.setEnabled(false);
         previousButton.setVisibility(View.INVISIBLE);
 
@@ -148,6 +151,10 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //butonul de meniu cu urmatoarele optiuni:
+        //set notation
+        //set reference pitch
+        //about
         switch (item.getItemId()) {
             case R.id.set_notation: {
 
@@ -198,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
     @Override
     public void onClick(View v) {
+        //metoda pentru selectarea notei in modul auto off
         String[] displayedValues = getNotes();
         switch (v.getId()){
             case R.id.nextChord:
@@ -226,6 +234,10 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     @Override
     public void onProgressUpdate(PitchDifference pitchDifference) {
+        //pitchDifference contine closest si deviation
+        //Cum se paseaza pitchDifference de la o clasa la alta?
+        //Din ListenerFragment se publica progesul si se transmite average pitchDifference mai departe la MainActivity
+        //pitchDifference se trimite in tunerview care il paseaza catre canvas painter pentru a se afisa pe ecran
         TunerView tunerView = this.findViewById(R.id.pitch);
 
         tunerView.setPitchDifference(pitchDifference);
@@ -240,6 +252,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        //cererea de permisiune pentru folosirea microfonului
         if (requestCode == RECORD_AUDIO_PERMISSION) {
             if (grantResults.length > 0) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -265,6 +278,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     @Override
     public void onItemSelected(MaterialSpinner view, int position, long id, Object item) {
+        //selectarea in spinner a instrumentului pentru acordare
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
 
         SharedPreferences.Editor editor = preferences.edit();
@@ -278,6 +292,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     @Override
     public void onValueChange(NumberPicker picker, int oldValue, int newValue) {
+        //schimbarea valorii frecventei de referinta
         String tag = String.valueOf(picker.getTag());
         if ("reference_pitch_picker".equalsIgnoreCase(tag)) {
             final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
@@ -294,21 +309,24 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     private void startRecording() {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        ListenerFragment listenerFragment = (ListenerFragment)
-                fragmentManager.findFragmentByTag(TAG_LISTENER_FRAGMENT);
+        //inceperea inregistrarii sunetului
+        FragmentManager fragmentManager = getSupportFragmentManager(); //fragmentManager este responsabil pentru toate fragmentele (aduagre/sterge/etc)
+        ListenerFragment listenerFragment = (ListenerFragment) fragmentManager.findFragmentByTag(TAG_LISTENER_FRAGMENT); //cautam cu findFragmentByTag fragmentul nostru, adica listenerFragment
 
         if (listenerFragment == null) {
             listenerFragment = new ListenerFragment();
             fragmentManager
-                    .beginTransaction()
-                    .add(listenerFragment, TAG_LISTENER_FRAGMENT)
-                    .commit();
+                    .beginTransaction() //incepe o serie de operatii de edit pe fragmentele asociate acestui fragmentmanager
+                    .add(listenerFragment, TAG_LISTENER_FRAGMENT) //adaugarea listenerFragment in lifecycle-ul de activitate
+                    .commit(); //comiterea adaugarii si incepe sa se foloseasca listenerFragment
+                               //listenerFragment la onCreate deja incepe sa asculte inputu microfonului si sa calculeze frecventa
         }
     }
 
     private void setTuning() {
+        //Tuning in codul nostru inseamna selectarea instrumentului si a modului de acordare (de ex: Guitar Standard, Guitar Drop D)
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
+        //in preferences tinem minte ultimu mod selectat iar la redeschiderea aplicatiei modul va fi cel ramas
         tuningPosition = preferences.getInt(CURRENT_TUNING, 0);
         int textColorDark = getResources().getColor(R.color.colorTextDark);
 
@@ -327,16 +345,18 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
 
     private void setReferencePitch() {
+        //setarea initiala a freceventei de referinta in functie de salvarile facute in fisierul de preferinte daca exista (PREFS_FILE)
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         referencePitch = preferences.getInt(REFERENCE_PITCH, 440);
     }
 
     private void requestRecordAudioPermission() {
+        //cererea de permisiune pentru inregistrare a sunetului prin microfon
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION);
     }
 
     private void SwitchState(Switch mySwitch){
-
+        //setarea Switch-ului pe AUTO ON/OFF
 
         mySwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -365,6 +385,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     private String[] getNotes(){
+        //in fucntie de notatia selectata si de instrument returneaza Array de String-uri cu numele complet al notelor(inclusiv semnul si octava)
         SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         boolean useScientificNotation = preferences.getBoolean(USE_SCIENTIFIC_NOTATION, true);
         Note[] notes = getCurrentTuning().getNotes();
@@ -388,6 +409,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     }
 
     public void setActivityBackgroundColor(int color) {
+        //metoda pentru schimbarea culorii de background al unei activitati
         View view = this.getWindow().getDecorView();
         view.setBackgroundColor(color);
     }
