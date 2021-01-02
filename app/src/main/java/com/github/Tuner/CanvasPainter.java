@@ -27,19 +27,19 @@ import androidx.core.content.ContextCompat;
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static com.github.Tuner.MainActivity.*;
 
+//CanvasPainter este o clasa infasuratoare pentru clasa Canvas si e folosita pentru desenarea elementelor grafice
 class CanvasPainter {
 
     private static final double TOLERANCE = 2D; //Toleranta este marja de eroare care ne spune daca nota este sau nu corect acordata
-    private static final int MAX_DEVIATION = 60;//MAX_DEVIATION este intervalul pentru fiecare nota
+    private static final int MAX_DEVIATION = 60;//MAX_DEVIATION este intervalul devierii pentru fiecare nota
     // Exemplu: daca avem nota G3 care are valoarea de 100 de centisunte. Aplicatia face ca nota G3 sa aibe intevalul (40,160)
-    private static final int NUMBER_OF_MARKS_PER_SIDE = 6;
+    private static final int NUMBER_OF_MARKS_PER_SIDE = 6; //NUMBER_OF_MARKS_PER_SIDE este folosit pentru pozitionarea elementelor pe ecran
     private final Context context;
 
 
     private Canvas canvas;
 
     private TextPaint textPaint = new TextPaint(ANTI_ALIAS_FLAG);
-    private TextPaint numbersPaint = new TextPaint(ANTI_ALIAS_FLAG);
     private Paint gaugePaint = new Paint(ANTI_ALIAS_FLAG);
     private Paint symbolPaint = new TextPaint(ANTI_ALIAS_FLAG);
 
@@ -60,6 +60,7 @@ class CanvasPainter {
         this.context = context;
     }
 
+    //se apeleaza din TunerView in scopul setarii canvas-ului pentru TunerView
     static CanvasPainter with(Context context) {
         return new CanvasPainter(context);
     }
@@ -74,11 +75,9 @@ class CanvasPainter {
         SharedPreferences preferences = context.getSharedPreferences(
                 PREFS_FILE, Context.MODE_PRIVATE);
 
-        useScientificNotation = preferences.getBoolean(
-                USE_SCIENTIFIC_NOTATION, true);
+        useScientificNotation = preferences.getBoolean(USE_SCIENTIFIC_NOTATION, true);
 
-        referencePitch = preferences.getInt(
-                REFERENCE_PITCH, 440);
+        referencePitch = preferences.getInt(REFERENCE_PITCH, 440);
 
         this.canvas = canvas;
 
@@ -102,7 +101,7 @@ class CanvasPainter {
             //daca modul auto este OFF, sa afisam notele instrumentului selectat pe ecran
             Note[] tuningNotes = getCurrentTuning().getNotes();
             Note note = tuningNotes[getReferencePosition()];
-            drawText(x, canvas.getHeight() / 3F, note, symbolPaint);
+            drawText(x, canvas.getHeight() / 3F, note, symbolPaint,true);
         }
 
         if (pitchDifference != null) {
@@ -118,7 +117,7 @@ class CanvasPainter {
                 float x = canvas.getWidth() / 2F;
 
                 if(isAutoModeEnabled()){
-                    drawText(x, canvas.getHeight() / 3F, pitchDifference.closest, textPaint); //deseneaza nota pe care o detecteaza aplicatia
+                    drawText(x, canvas.getHeight() / 3F, pitchDifference.closest, textPaint,true); //deseneaza nota pe care o detecteaza aplicatia
                 }
 
             }
@@ -128,9 +127,15 @@ class CanvasPainter {
     private void drawDeviation() {
         //metoda pentru a desena:deviatia(Numarul de centisunete),un mesaj care ne spune cum este nota (Flat, Sharp), pendulul si animatia pentru pendul
         long rounded = Math.round(pitchDifference.deviation);
-        String text = String.valueOf(rounded);
-        String flat = "To Flat";
-        String sharp = "To Sharp";
+        String deviation="";
+        if (rounded>0){
+            deviation = "+"+String.valueOf(rounded);
+        }
+        else{
+            deviation = String.valueOf(rounded);
+        }
+        String flat = "Too Flat";
+        String sharp = "Too Sharp";
         float offset = textPaint.measureText(flat) / 2F;
         ImageView left = MainActivity.getleftindicator();
         ImageView right = MainActivity.getrightindicator();
@@ -138,18 +143,20 @@ class CanvasPainter {
         AnimationDrawable rightI = MainActivity.getRightAnimation();
 
         Rect bounds = new Rect();
-        symbolPaint.getTextBounds(text, 0, text.length(), bounds);
+        symbolPaint.getTextBounds(deviation, 0, deviation.length(), bounds);
         float spaceWidth = gaugeWidth / NUMBER_OF_MARKS_PER_SIDE;
 
-        float xPosForSharpValues = x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(text) / 2F-100;
-        float xPosForFlatValues = x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(text) / 2F+100;
+        float xPosForSharpValues = x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(deviation) / 2F-100;
+        float xPosForFlatValues = x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(deviation) / 2F+100;
         float yPos = canvas.getHeight() / 1.3F;
         if (rounded < 0){
+            //Setarea vizivilitatii animatilor
             left.setVisibility(View.VISIBLE);
             right.setVisibility(View.INVISIBLE);
-            canvas.drawText(text, xPosForFlatValues, yPos, symbolPaint);
+            canvas.drawText(deviation, xPosForFlatValues, yPos, symbolPaint);
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
                 canvas.drawText(flat,x-offset,canvas.getHeight() / 4F,textPaint);
+                //Pornirea animatiei
                 leftI.start();
                 try {
                     Thread.sleep(100);
@@ -161,7 +168,7 @@ class CanvasPainter {
         else if (rounded>0){
             left.setVisibility(View.INVISIBLE);
             right.setVisibility(View.VISIBLE);
-            canvas.drawText(text, xPosForSharpValues, yPos, symbolPaint);
+            canvas.drawText(deviation, xPosForSharpValues, yPos, symbolPaint);
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
                 canvas.drawText(sharp,x-offset,canvas.getHeight() / 4F,textPaint);
                 rightI.start();
@@ -205,12 +212,12 @@ class CanvasPainter {
 
         //pozitia x pe ecran difera pentru frecventa de referinta in functie de notatie
         if(useScientificNotation){
-            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset - 45, y, note, paint);
+            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset - 45, y, note, paint,false);
             canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
                     x + NUMBER_OF_MARKS_PER_SIDE * offset, y, paint);
         }
         else{
-            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset-150, y, note, paint);
+            drawText(x + NUMBER_OF_MARKS_PER_SIDE * offset-150, y, note, paint,false);
             canvas.drawText(String.format(Locale.ENGLISH, "= %d Hz", referencePitch),
                     x + NUMBER_OF_MARKS_PER_SIDE * offset-100, y, paint);
         }
@@ -230,13 +237,10 @@ class CanvasPainter {
 
         float yPos = canvas.getHeight() / 1.5F;
         canvas.drawText(sharp,
-                x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(sharp) / 2F,
-                yPos, symbolPaint);
+                x + NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(sharp) / 2F, yPos, symbolPaint);
 
         canvas.drawText(flat,
-                x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(flat) / 2F,
-                yPos,
-                symbolPaint);
+                x - NUMBER_OF_MARKS_PER_SIDE * spaceWidth - symbolPaint.measureText(flat) / 2F, yPos, symbolPaint);
     }
 
 
@@ -247,29 +251,47 @@ class CanvasPainter {
         canvas.drawBitmap(bitBtn,canvas.getWidth()/2.5F,canvas.getHeight() / 1.2F,gaugePaint);
     }
 
-    private void drawText(float x, float y, Note note, Paint textPaint) {
+    private void drawText(float x, float y, Note note, Paint textPaint, boolean textType) {
         //drawText afiseaza pe ecran nota, octava si semnul acesteia
         String noteText = getNote(note.getName());
-        float offset = textPaint.measureText(noteText) / 2F;
-
+        TextPaint noteTextPaint = new TextPaint(ANTI_ALIAS_FLAG);
+        noteTextPaint.setColor(textColor);
+        //cu ajutorul metodei drawText afisam toate textele de pe ecran
+        //motivul acestui if este pentru ca dorim ca unele texte sa aibe dimensiuni mai mari
+        //De ex: Nota din centra vrem sa fie mai mare, iar nota de la frecventeda de referinta mai mica
+        if (textType){
+            noteTextPaint.setTextSize(140);
+        }
+        else{
+            noteTextPaint.setTextSize(textPaint.getTextSize());
+        }
+        float offset = noteTextPaint.measureText(noteText) / 2F;
         String sign = note.getSign();
         String octave = String.valueOf(getOctave(note.getOctave()));
 
         TextPaint paint = new TextPaint(ANTI_ALIAS_FLAG);
         paint.setColor(textColor);
-        int textSize = (int) (textPaint.getTextSize() / 2);
+        int textSize = (int) (noteTextPaint.getTextSize() / 2);
         paint.setTextSize(textSize);
 
-        float factor = 0.75f;
+        float factor;
+        float distance;
         if (useScientificNotation) {
             factor = 1.5f;
+            distance=1.25f;
+        }
+        else{
+            factor = 0.75f;
+            distance=1.0f;
         }
 
-        canvas.drawText(sign, x + offset * 1.25f, y - offset * factor, paint);
-        canvas.drawText(octave, x + offset * 1.25f, y + offset * 0.5f , paint);
-        canvas.drawText(noteText, x - offset, y, textPaint);
+        canvas.drawText(sign, x + offset * distance, y - offset * factor, paint);
+        canvas.drawText(octave, x + offset * distance, y + offset * 0.5f , paint);
+        canvas.drawText(noteText, x - offset-distance, y, noteTextPaint);
 
     }
+
+
 
     private int getOctave(int octave) {
         //aici se ia octava notei
@@ -293,7 +315,7 @@ class CanvasPainter {
     }
 
     private void setBackground() {
-        //metoda prin care schimbam culoarea background-ului si a cercului de la baza pendulului
+        //metoda prin care schimbam culoarea background-ului(ROSU daca nota nu este corect acordata sau VERDE daca este perfect acordata) si a cercului de la baza pendulului
         String perfect = "Perfect";
         float offset = textPaint.measureText(perfect) / 2F;
         float sgaugeWidth = 0.15F * canvas.getWidth();
@@ -308,9 +330,16 @@ class CanvasPainter {
         }
 
         canvas.drawColor(context.getResources().getColor(color));
-        canvas.drawText(text,
-                x + sgaugeWidth - symbolPaint.measureText(text) ,
-                canvas.getHeight() / 3F, symbolPaint);
+        if(useScientificNotation){
+            canvas.drawText(text,
+                    x + sgaugeWidth - symbolPaint.measureText(text) ,
+                    canvas.getHeight() / 3F, symbolPaint);
+        }else{
+            canvas.drawText(text,
+                    x + sgaugeWidth,
+                    canvas.getHeight() / 3F, symbolPaint);
+        }
+
     }
 
     private int getNearestDeviation() {
@@ -323,9 +352,7 @@ class CanvasPainter {
 
 
     //metode ajutatoare pentru redimensioarea PNG-urilor
-    private int calculateInSampleSize(
-            BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        // Raw height and width of image
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
         final int width = options.outWidth;
         int inSampleSize = 1;
@@ -335,8 +362,6 @@ class CanvasPainter {
             final int halfHeight = height / 2;
             final int halfWidth = width / 2;
 
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
             while ((halfHeight / inSampleSize) >= reqHeight
                     && (halfWidth / inSampleSize) >= reqWidth) {
                 inSampleSize *= 2;
@@ -348,16 +373,12 @@ class CanvasPainter {
 
     private  Bitmap decodeSampledBitmapFromResource(Resources res, int resId,
                                                     int reqWidth, int reqHeight) {
-
-        // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeResource(res, resId, options);
 
-        // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
 
-        // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeResource(res, resId, options);
     }

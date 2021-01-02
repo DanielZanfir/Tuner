@@ -209,21 +209,21 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         String[] displayedValues = getNotes();
         switch (v.getId()){
             case R.id.nextChord:
-                if (referencePosition==1){
-                    referencePosition=displayedValues.length;
-                    break;
-                }
-                if (referencePosition>1){
-                    referencePosition--;
-                }
-                break;
-            case R.id.previousChord:
                 if (referencePosition==displayedValues.length){
                     referencePosition=1;
                     break;
                 }
-                if (referencePosition<displayedValues.length){
+                if (referencePosition>=1){
                     referencePosition++;
+                }
+                break;
+            case R.id.previousChord:
+                if (referencePosition==1){
+                    referencePosition=displayedValues.length;
+                    break;
+                }
+                if (referencePosition<=displayedValues.length){
+                    referencePosition--;
                 }
                 break;
             default:referencePosition=displayedValues.length;

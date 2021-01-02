@@ -31,6 +31,7 @@ public class TunerView extends View {
         canvasPainter.paint(pitchDifference).on(canvas);
     }
 
+    //metoda pentru setarea/updatarea atributului pitchDifference
     public void setPitchDifference(PitchDifference pitchDifference) {
         this.pitchDifference = pitchDifference;
     }
