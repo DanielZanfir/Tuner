@@ -9,4 +9,8 @@
         <item name="android:colorControlActivated">#FFFFFF</item>
     </style>
 
+    <style name="SpinnerTextViewItem" parent="@android:style/Widget.TextView" >
+        <item name="android:textStyle" >bold</item>
+    </style>
+
 </resources>

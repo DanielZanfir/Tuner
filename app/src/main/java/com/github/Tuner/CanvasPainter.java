@@ -7,22 +7,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.Drawable;
-import android.media.Image;
 import android.text.TextPaint;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.Locale;
-import java.util.Objects;
-
-import androidx.core.content.ContextCompat;
 
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static com.github.Tuner.MainActivity.*;
@@ -83,14 +75,14 @@ class CanvasPainter {
 
         redBackground = R.color.red_dark;
         greenBackground = R.color.green_dark;
-        textColor = Color.WHITE;
+        textColor = R.color.colorYellowText;
 
 
         gaugeWidth = 0.45F * canvas.getWidth();
         x = canvas.getWidth() / 2F;
         y = canvas.getHeight() / 2F;
 
-        textPaint.setColor(textColor);
+        textPaint.setColor(context.getResources().getColor(textColor));
         int textSize = context.getResources().getDimensionPixelSize(R.dimen.noteTextSize);
         textPaint.setTextSize(textSize);
         drawSymbols();
@@ -127,9 +119,9 @@ class CanvasPainter {
     private void drawDeviation() {
         //metoda pentru a desena:deviatia(Numarul de centisunete),un mesaj care ne spune cum este nota (Flat, Sharp), pendulul si animatia pentru pendul
         long rounded = Math.round(pitchDifference.deviation);
-        String deviation="";
+        String deviation;
         if (rounded>0){
-            deviation = "+"+String.valueOf(rounded);
+            deviation = "+"+rounded;
         }
         else{
             deviation = String.valueOf(rounded);
@@ -204,7 +196,7 @@ class CanvasPainter {
         };
 
         TextPaint paint = new TextPaint(ANTI_ALIAS_FLAG);
-        paint.setColor(textColor);
+        paint.setColor(context.getResources().getColor(textColor));
         int size = (int) (textPaint.getTextSize() / 2);
         paint.setTextSize(size);
 
@@ -233,7 +225,7 @@ class CanvasPainter {
 
         int symbolsTextSize = context.getResources().getDimensionPixelSize(R.dimen.symbolsTextSize);
         symbolPaint.setTextSize(symbolsTextSize);
-        symbolPaint.setColor(textColor);
+        symbolPaint.setColor(Color.WHITE);
 
         float yPos = canvas.getHeight() / 1.5F;
         canvas.drawText(sharp,
@@ -255,7 +247,7 @@ class CanvasPainter {
         //drawText afiseaza pe ecran nota, octava si semnul acesteia
         String noteText = getNote(note.getName());
         TextPaint noteTextPaint = new TextPaint(ANTI_ALIAS_FLAG);
-        noteTextPaint.setColor(textColor);
+        noteTextPaint.setColor(context.getResources().getColor(textColor));
         //cu ajutorul metodei drawText afisam toate textele de pe ecran
         //motivul acestui if este pentru ca dorim ca unele texte sa aibe dimensiuni mai mari
         //De ex: Nota din centra vrem sa fie mai mare, iar nota de la frecventeda de referinta mai mica
@@ -270,7 +262,7 @@ class CanvasPainter {
         String octave = String.valueOf(getOctave(note.getOctave()));
 
         TextPaint paint = new TextPaint(ANTI_ALIAS_FLAG);
-        paint.setColor(textColor);
+        paint.setColor(context.getResources().getColor(textColor));
         int textSize = (int) (noteTextPaint.getTextSize() / 2);
         paint.setTextSize(textSize);
 
@@ -316,6 +308,7 @@ class CanvasPainter {
 
     private void setBackground() {
         //metoda prin care schimbam culoarea background-ului(ROSU daca nota nu este corect acordata sau VERDE daca este perfect acordata) si a cercului de la baza pendulului
+        symbolPaint.setColor(context.getResources().getColor(textColor));
         String perfect = "Perfect";
         float offset = textPaint.measureText(perfect) / 2F;
         float sgaugeWidth = 0.15F * canvas.getWidth();

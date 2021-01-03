@@ -10,8 +10,14 @@
     <string name="ok">OK</string>
     <string name="choose_tuning_mode" translatable="false">Choose tuning mode</string>
     <string name="AUTO">AUTO</string>
+    <string name="about_us">About Us</string>
+    <string name="instrument_tuning_aplication">Instrument Tuning Application</string>
+    <string name="created_by_pitch_lab_2020">Created by Pitch Lab © 2020</string>
+    <string name="chs_project_in_android_studio">CHS Project in Android Studio</string>
+    <string name="politehnica_university_of_timi_oara">Politehnica University of Timișoara</string>
+    <string name="by_daniel_zanfir_and_sergiu_radu">By Daniel Zanfir and Sergiu Radu</string>
 
-    <string-array name="tunings">
+    <string-array name="tunings" >
         <item>Chromatic</item>
         <item>Guitar (standard)</item>
         <item>Guitar (Drop D)</item>

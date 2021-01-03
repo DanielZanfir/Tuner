@@ -12,6 +12,12 @@
         android:title="@string/set_reference_pitch"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/about_us"
+        android:title="@string/about_us"
+        app:showAsAction="never"
+        />
+
 
 </menu>
 

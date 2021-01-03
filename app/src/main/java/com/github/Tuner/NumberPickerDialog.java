@@ -26,7 +26,7 @@ public class NumberPickerDialog extends DialogFragment {
         numberPicker.setMaxValue(500);
         numberPicker.setValue(currentValue);
 
-        int textColorDark = getResources().getColor(R.color.colorTextDark);
+        int textColorDark = getResources().getColor(R.color.colorWhiteText);
         numberPicker.setTextColor(textColorDark);
         numberPicker.setDividerColor(textColorDark);
         numberPicker.setSelectedTextColor(textColorDark);

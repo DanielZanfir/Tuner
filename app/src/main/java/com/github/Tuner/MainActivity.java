@@ -1,6 +1,7 @@
 package com.github.Tuner;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
@@ -199,6 +200,10 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
                 break;
             }
+            case R.id.about_us:{
+                Intent myIntent = new Intent(this, AboutActivity.class);
+                startActivity(myIntent);
+            }
         }
 
         return false;
@@ -328,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
         //in preferences tinem minte ultimu mod selectat iar la redeschiderea aplicatiei modul va fi cel ramas
         tuningPosition = preferences.getInt(CURRENT_TUNING, 0);
-        int textColorDark = getResources().getColor(R.color.colorTextDark);
+        int textColorDark = getResources().getColor(R.color.colorWhiteText);
 
         MaterialSpinner spinner = findViewById(R.id.tuning);
         MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
