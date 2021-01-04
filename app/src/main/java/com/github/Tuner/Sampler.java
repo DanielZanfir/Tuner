@@ -8,7 +8,7 @@ import java.util.Map;
 class Sampler {
 
     //Sampler calculeaza average dintr-o lista cu un nr dat de deviatii
-    //in cazul nostru un average pentru 15 deviatii
+    //din 15 deviatii inregistrate calculeaza media doar pentru cea mai frecventa nota apropiata din lista cu 15 deviatii
     static PitchDifference calculateAverageDifference(List<PitchDifference> samples) {
         Note mostFrequentNote = extractMostFrequentNote(samples); //se extrage din samples cea mai frecventa nota apropiata
         List<PitchDifference> filteredSamples = filterByNote(samples, mostFrequentNote); //lista deviatilor doar pentru cea mai frecventa nota apropiata

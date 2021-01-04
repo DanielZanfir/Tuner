@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
 import android.text.TextPaint;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -150,11 +151,6 @@ class CanvasPainter {
                 canvas.drawText(flat,x-offset,canvas.getHeight() / 4F,textPaint);
                 //Pornirea animatiei
                 leftI.start();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
         else if (rounded>0){
@@ -164,11 +160,6 @@ class CanvasPainter {
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
                 canvas.drawText(sharp,x-offset,canvas.getHeight() / 4F,textPaint);
                 rightI.start();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -338,6 +329,7 @@ class CanvasPainter {
     private int getNearestDeviation() {
         //metoda pentru a lua deviatia notei receptionate de aplicatie
         float deviation = (float) pitchDifference.deviation;
+        Log.i("DeviationCanvasPainter",String.valueOf(pitchDifference.deviation));
         int rounded = Math.round(deviation);
 
         return Math.round(rounded / 10f) * 10;

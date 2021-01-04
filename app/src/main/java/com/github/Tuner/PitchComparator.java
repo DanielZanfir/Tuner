@@ -1,5 +1,7 @@
 package com.github.Tuner;
 
+import android.util.Log;
+
 import com.github.Tuner.tuning.NoteFrequencyCalculator;
 
 import java.util.Arrays;
@@ -30,8 +32,8 @@ class PitchComparator {
         Note closest = notes[0];
         for (Note note : notes) {
             double frequency = noteFrequencyCalculator.getFrequency(note);//frecventa adevarata fata de care comparam inputu (de Ex: E4 CURAT)
+            Log.i("TrueFrequency",note.getName().toString()+note.getOctave()+note.getSign()+" "+frequency);
             double centDifference = 1200d * log2(pitch / frequency);//diferenta in centisunete dintre input(pitch) si frecventa adevarata(frequency)
-
             //compara care diferenta in centisunete e cea mai mica(compara fata de care nota input-ul e cel mai apropiat)
             if (Math.abs(centDifference) < Math.abs(minCentDifference)) {
                 minCentDifference = centDifference; //salvam in centisunete diferenta cea mai mica

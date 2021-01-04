@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,14 +116,13 @@ public class ListenerFragment extends Fragment {
                     PitchDifference pitchDifference = PitchComparator.retrieveNote(pitch);
                     //PitchDifference este un o clasa wrapper pentru 2 chestii: closest si deviation(minCentDiff)
                     pitchDifferences.add(pitchDifference);
-
+                    Log.i("PitchDiferenceNote",pitchDifference.closest.getName().toString()+pitchDifference.closest.getSign()+pitchDifference.closest.getOctave()+" "+pitchDifference.deviation);
                     if (pitchDifferences.size() >= MIN_ITEMS_COUNT) {
-                        PitchDifference average =
-                                Sampler.calculateAverageDifference(pitchDifferences);
+                        PitchDifference average = Sampler.calculateAverageDifference(pitchDifferences);
                                 //Sampler calculeaza average pentru un nr dat de deviatii
                                 //in cazul nostru un average pentru 15 deviatii
                         publishProgress(average);//average este de fapt average deviation
-
+                        Log.i("AveragepitchDif",String.valueOf(average.deviation));
                         pitchDifferences.clear();
                     }
                 }
