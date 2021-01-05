@@ -4,7 +4,8 @@ import com.github.Tuner.Note;
 
 import java.util.Arrays;
 import java.util.List;
-//aceasta clasa ne da freceventele notelor date ca si input(in format nume Nota, octava, semn) in functie de frecenta de referinta (by default 440Hz)
+//aceasta clasa ne da freceventele adevarate ale notelor in functie de frecenta de referinta (by default 440Hz)
+
 public class NoteFrequencyCalculator {
 
     private static List<String> notes =
@@ -15,7 +16,7 @@ public class NoteFrequencyCalculator {
         //in acest constructor se seteaza frecventa de referinta data ca parametru
         this.referenceFrequency = referenceFrequency;
     }
-
+//primeste ca parametru o nota (in format nume Nota, octava, semn) si returneaza frevcenta adevarata (reala) a notei
     public double getFrequency(Note note) {
         int semitonesPerOctave = 12;
         int referenceOctave = 4;

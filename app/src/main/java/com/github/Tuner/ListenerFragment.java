@@ -97,6 +97,7 @@ public class ListenerFragment extends Fragment {
         //doInBackground pe scurt, captureaza sunetul si calculeaza frecventa
         @Override
         protected Void doInBackground(Void... params) {
+            //PitchDetectionHandler se ocupa de primirea frecventei rezultate din PitchProcessor si de calcularile ulterioare ale mediei
             PitchDetectionHandler pitchDetectionHandler = (pitchDetectionResult, audioEvent) -> {
 
                 if (isCancelled()) {

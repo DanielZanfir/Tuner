@@ -151,6 +151,11 @@ class CanvasPainter {
                 canvas.drawText(flat,x-offset,canvas.getHeight() / 4F,textPaint);
                 //Pornirea animatiei
                 leftI.start();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         else if (rounded>0){
@@ -160,6 +165,11 @@ class CanvasPainter {
             if (Math.abs(getNearestDeviation()) > TOLERANCE) {
                 canvas.drawText(sharp,x-offset,canvas.getHeight() / 4F,textPaint);
                 rightI.start();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
