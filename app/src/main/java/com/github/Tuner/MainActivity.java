@@ -7,11 +7,13 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager.LayoutParams;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     private static int referencePosition;
     private Switch mySwitch;
     private ImageButton nextButton,previousButton;
+    private Button noteChange;
     private static ImageView LIndicator, RIndicator;
     private static AnimationDrawable running_left_indicator,running_right_indicator;
     private static boolean isAutoModeEnabled = true;
@@ -109,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         //cand AUTO este OFF cu nextButton si cu previousButton selectam o singura nota pe care vrem sa o acordam din setul de note specific instrumentului selectat
         nextButton = (ImageButton) findViewById(R.id.nextChord);
         previousButton = (ImageButton) findViewById(R.id.previousChord);
+        noteChange =(Button) findViewById(R.id.noteChange) ;
 
         //ImageView-urile pentru aniamtia pendulului spre stanga/dreapta
         LIndicator = (ImageView)findViewById(R.id.indicator);
@@ -116,12 +120,15 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
         nextButton.setOnClickListener(this);
         previousButton.setOnClickListener(this);
+        noteChange.setOnClickListener(this);
 
         mySwitch.setChecked(true); //Modul Auto este intodeauna ON la pornirea aplicatiei
         nextButton.setEnabled(false);
         nextButton.setVisibility(View.INVISIBLE); //Asta inseamna ca butoanele pentru selectarea unei note sunt inactive
         previousButton.setEnabled(false);
         previousButton.setVisibility(View.INVISIBLE);
+        noteChange.setEnabled(false);
+        noteChange.setVisibility(View.INVISIBLE);
 
         SwitchState(mySwitch);
 
@@ -139,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         myToolbar.setTitle("");
         myToolbar.showOverflowMenu();
-        myToolbar.setBackgroundColor(0xfff5c71a);
+        myToolbar.setBackgroundColor(0xffffad1d);
         setSupportActionBar(myToolbar);
 
     }
@@ -231,7 +238,22 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     referencePosition--;
                 }
                 break;
-            default:referencePosition=displayedValues.length;
+            case R.id.noteChange:
+                final SharedPreferences preferences = getSharedPreferences(PREFS_FILE,
+                        MODE_PRIVATE);
+                NotePickerDialog dialog = new NotePickerDialog();
+
+                Bundle bundle = new Bundle();
+                bundle.putBoolean("use_scientific_notation", preferences.getBoolean(
+                        MainActivity.USE_SCIENTIFIC_NOTATION, true));
+                bundle.putInt("current_value", referencePosition);
+                dialog.setArguments(bundle);
+
+                dialog.setValueChangeListener(this);
+                dialog.show(getSupportFragmentManager(), "note_picker");
+                break;
+
+            //default:referencePosition=displayedValues.length;
         }
         TunerView tunerView = this.findViewById(R.id.pitch);
         tunerView.invalidate();
@@ -310,6 +332,12 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
             TunerView tunerView = this.findViewById(R.id.pitch);
             tunerView.invalidate();
+        } else if ("note_picker".equalsIgnoreCase(tag)) {
+
+            referencePosition = newValue;
+
+            TunerView tunerView = this.findViewById(R.id.pitch);
+            tunerView.invalidate();
         }
     }
 
@@ -339,7 +367,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
 
         spinner.setTextColor(textColorDark);
-        spinner.setBackgroundColor(0xfff5c71a);
+        spinner.setBackgroundColor(0xffffad1d);
         spinner.setTextColor(textColorDark);
         spinner.setArrowColor(textColorDark);
 
@@ -372,8 +400,12 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     nextButton.setVisibility(View.INVISIBLE);
                     previousButton.setEnabled(false);
                     previousButton.setVisibility(View.INVISIBLE);
+                    noteChange.setEnabled(false);
+                    noteChange.setVisibility(View.INVISIBLE);
                     referencePosition=0;
                     Toast.makeText(getApplicationContext(),"Auto Mode is enabled",Toast.LENGTH_SHORT).show();
+                    TunerView tunerView = findViewById(R.id.pitch);
+                    tunerView.invalidate();
                 }else{
                     mySwitch.setChecked(false);
                     isAutoModeEnabled=false;
@@ -381,9 +413,22 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     nextButton.setVisibility(View.VISIBLE);     //daca modific switchu sa se faca vizibile butoanele in cadrul aceluiasi instrument
                     previousButton.setEnabled(true);
                     previousButton.setVisibility(View.VISIBLE);
+                    noteChange.setEnabled(true);
+                    noteChange.setVisibility(View.VISIBLE);
                     String[] displayedValues = getNotes();
                     referencePosition=displayedValues.length;
                     Toast.makeText(getApplicationContext(),"Auto Mode is disabled",Toast.LENGTH_SHORT).show();
+                    Handler handler =new Handler();
+                    handler.postDelayed(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            Toast.makeText(getApplicationContext(),"Tap the note for easier selection",Toast.LENGTH_SHORT).show();
+                        }
+                    },3000);
+                    TunerView tunerView = findViewById(R.id.pitch);
+                    tunerView.invalidate();
                 }
             }
         });

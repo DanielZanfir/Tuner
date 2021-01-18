@@ -31,7 +31,6 @@
 
 
         <Switch
-
             android:layout_below="@+id/my_toolbar"
             android:checked="true"
             android:id="@+id/simpleSwitch"
@@ -76,6 +75,7 @@
         />
 
     <ImageButton
+
         android:background="@null"
         android:src="@drawable/arrow_right"
         android:id="@+id/nextChord"
@@ -86,6 +86,16 @@
         android:layout_marginTop="55dp"
         android:layout_marginLeft="175dp"
         />
+
+    <Button
+        android:background="@null"
+        android:id="@+id/noteChange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/previousChord"
+        android:layout_below="@id/simpleText"
+        android:layout_marginTop="60dp"
+        android:layout_marginLeft="45dp"/>
 
 
     <com.github.Tuner.TunerView
