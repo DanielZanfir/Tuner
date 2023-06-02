@@ -39,4 +39,12 @@ class PitchDifference implements Parcelable {
         dest.writeString(closest.getName().name());
         dest.writeDouble(deviation);
     }
+
+//    public double getDeviation(){
+//        return deviation;
+//    }
+//
+//    public String getClosest(){
+//        return closest.getName().name();
+//    }
 }

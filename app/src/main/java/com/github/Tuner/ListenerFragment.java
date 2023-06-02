@@ -31,6 +31,8 @@ public class ListenerFragment extends Fragment {
     private static TaskCallbacks taskCallbacks;
     private PitchListener pitchListener;
 
+    private static boolean isRecording = false;
+
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -90,6 +92,13 @@ public class ListenerFragment extends Fragment {
         void onProgressUpdate(PitchDifference percent);
     }
 
+    public void stopRecording() {
+        if (isRecording) {
+            pitchListener.cancel(true);
+            isRecording = false;
+        }
+    }
+
     private static class PitchListener extends AsyncTask<Void, PitchDifference, Void> {
 
         private AudioDispatcher audioDispatcher;
@@ -107,6 +116,7 @@ public class ListenerFragment extends Fragment {
 
                 if (!IS_RECORDING) {
                     IS_RECORDING = true;
+                    isRecording = true;
                     publishProgress(); //aceasta metoda publica update-uri catre thread-ul UI-ului in timp ce doInBackground inca ruleaza
                     //orice apel la aceasta metoda va declansa executia metodei onProgressUpdate(PitchDifference... pitchDifference)
                 }
@@ -166,6 +176,7 @@ public class ListenerFragment extends Fragment {
             if (audioDispatcher != null && !audioDispatcher.isStopped()) {
                 audioDispatcher.stop();
                 IS_RECORDING = false;
+                isRecording = false;
             }
         }
     }
