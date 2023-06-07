@@ -8,6 +8,9 @@ import android.graphics.drawable.AnimationDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
@@ -33,10 +36,14 @@ import com.shawnlin.numberpicker.NumberPicker.OnValueChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Queue;
+import java.util.stream.IntStream;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AlertDialog.Builder;
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,8 +53,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 
-import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static android.speech.tts.TextToSpeech.QUEUE_FLUSH;
+import static java.util.Arrays.asList;
 
 public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         OnItemSelectedListener, OnValueChangeListener, View.OnClickListener {
@@ -74,6 +81,8 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     public static TextToSpeech textToSpeech;
     private Queue<String> textQueue;
     ListenerFragment listenerFragment;
+    private SpeechRecognizer speechRecognizer;
+    Intent speechIntent = null;
 
     public static Tuning getCurrentTuning() {
         return TuningMapper.getTuningFromPosition(tuningPosition);
@@ -144,6 +153,8 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         noteChange.setEnabled(false);
         noteChange.setVisibility(View.INVISIBLE);
 
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        speechInitialize();
         textToSpeech = new TextToSpeech(this, status -> {
             verifyTextToSpeechStatus(status);
             setActivityStartPopUp();
@@ -177,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         } else {
             addToQueue(getWelcomeMessage());
             processTextQueue();
-            startRecording();
+            startSpeechRecognition();
         }
 
     }
@@ -198,6 +209,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                     public void onDone(String utteranceId) {
                         // Utterance completed, handle accordingly
                         processTextQueue();
+                        startSpeechRecognition();
                     }
 
                     @Override
@@ -328,14 +340,12 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         TunerView tunerView = this.findViewById(R.id.pitch);
 
         if (pitchDifference != null) {
-            stopRecording();
             int deviation = (int) pitchDifference.deviation;
             Log.i("PitchDifMainAcc", pitchDifference.closest.getName().name() + pitchDifference.closest.getSign() + pitchDifference.closest.getOctave());
             Log.i("PitchDifDeviation", ""+pitchDifference.deviation);
             addToQueue("Note played is " + pitchDifference.closest.getName().name() + pitchDifference.closest.getSign() + pitchDifference.closest.getOctave() +
                     "and the deviation is " + deviation);
             processTextQueue();
-//            startRecording();
         }
         tunerView.setPitchDifference(pitchDifference);
         tunerView.invalidate();
@@ -355,10 +365,10 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     addToQueue("Permission granted! Welcome to Tuning App. You can start to tune or adjust some settings. Do you want to know what you can change and the vocal commands to do it?");
                     processTextQueue();
-                    startRecording();
+                    startSpeechRecognition();
 
                 } else {
-                    addToQueue("Permission denied! In order to use the application please grant access to use the microphone");
+                    addToQueue("Permission denied! In order to use the application please reopen the application and grant access to use the microphone");
                     processTextQueue();
                     AlertDialog alertDialog = new Builder(MainActivity.this).create();
                     alertDialog.setTitle(R.string.permission_required);
@@ -384,9 +394,11 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
     public void onItemSelected(MaterialSpinner view, int position, long id, Object item) {
         //selectarea in spinner a instrumentului pentru acordare
         final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
-        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
+        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, asList(getResources().getStringArray(R.array.tunings)));
+        tuningPositionSet(position, preferences, adapter);
+    }
 
-
+    private void tuningPositionSet(int position, SharedPreferences preferences, MaterialSpinnerAdapter<String> adapter) {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putInt(CURRENT_TUNING, position);
         editor.apply();
@@ -405,29 +417,37 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         //schimbarea valorii frecventei de referinta
         String tag = String.valueOf(picker.getTag());
         if ("reference_pitch_picker".equalsIgnoreCase(tag)) {
-            final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
-
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putInt(REFERENCE_PITCH, newValue);
-            editor.apply();
-
-            setReferencePitch();
-            addToQueue("Reference set to " + newValue);
-            processTextQueue();
-
-
-            TunerView tunerView = this.findViewById(R.id.pitch);
-            tunerView.invalidate();
+            addReferencePitch(newValue);
         } else if ("note_picker".equalsIgnoreCase(tag)) {
             referencePosition = newValue;
 
-            String[] displayedValues = getNotes();
-            addToQueue("Current note is "+ noteToBeSpoken(newValue, displayedValues));
-            processTextQueue();
+            speakSelectedNote(newValue);
 
             TunerView tunerView = this.findViewById(R.id.pitch);
             tunerView.invalidate();
         }
+    }
+
+    private void speakSelectedNote(int newValue) {
+        String[] displayedValues = getNotes();
+        addToQueue("Current note is " + noteToBeSpoken(newValue, displayedValues));
+        processTextQueue();
+    }
+
+    private void addReferencePitch(int newValue) {
+        final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt(REFERENCE_PITCH, newValue);
+        editor.apply();
+
+        setReferencePitch();
+        addToQueue("Reference set to " + newValue);
+        processTextQueue();
+
+
+        TunerView tunerView = this.findViewById(R.id.pitch);
+        tunerView.invalidate();
     }
 
     private String noteToBeSpoken(int newValue, String[] displayedValues) {
@@ -457,12 +477,6 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         }
     }
 
-    private void stopRecording() {
-        if (listenerFragment != null) {
-            listenerFragment.stopRecording();
-            listenerFragment = null;
-        }
-    }
 
     private void setTuning() {
         //Tuning in codul nostru inseamna selectarea instrumentului si a modului de acordare (de ex: Guitar Standard, Guitar Drop D)
@@ -472,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         int textColorDark = getResources().getColor(R.color.colorWhiteText);
 
         MaterialSpinner spinner = findViewById(R.id.tuning);
-        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, Arrays.asList(getResources().getStringArray(R.array.tunings)));
+        MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, asList(getResources().getStringArray(R.array.tunings)));
 
         spinner.setTextColor(textColorDark);
         spinner.setBackgroundColor(0xffffad1d);
@@ -582,7 +596,14 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
 
     private void speak(String text) {
         if (textToSpeech != null && !textToSpeech.isSpeaking()) {
+            if (listenerFragment != null){
+                listenerFragment.stopRecording();
+            }
+            if (speechRecognizer != null){
+                speechRecognizer.destroy();
+            }
             textToSpeech.speak(text, QUEUE_FLUSH, null);
+            startSpeechRecognition();
         }
     }
 
@@ -592,6 +613,7 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
             textToSpeech.stop();
             textToSpeech.shutdown();
         }
+        speechRecognizer.destroy();
         super.onDestroy();
     }
 
@@ -624,6 +646,190 @@ public class MainActivity extends AppCompatActivity implements TaskCallbacks,
         }
         Log.i("tuningModeName", refinedTuningMode.toString());
         return "Auto mode is " + switchState +". The reference pitch is " + getReferencePitch()+ ". The mode is" + refinedTuningMode.toString() + ".";
+    }
+
+    private void speechInitialize() {
+        speechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.ENGLISH);
+
+    }
+
+    private void startSpeechRecognition() {
+            speechRecognizer.startListening(speechIntent);
+            speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                @Override
+                public void onReadyForSpeech(Bundle params) {
+                    // Called when the speech recognition is ready to start
+                }
+
+                @Override
+                public void onBeginningOfSpeech() {
+                    // Called when the user starts speaking
+                }
+
+                @Override
+                public void onRmsChanged(float rmsdB) {
+                    // Called when the input sound level changes
+                }
+
+                @Override
+                public void onBufferReceived(byte[] bytes) {
+
+                }
+
+                @Override
+                public void onEndOfSpeech() {
+                    // Called when the user stops speaking
+                }
+
+                @Override
+                public void onError(int error) {
+                    Log.e("speechRecognition", String.valueOf(error));
+                    if (error == SpeechRecognizer.ERROR_NO_MATCH) {
+                        startSpeechRecognition();
+                    }
+                    if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT){
+                        startSpeechRecognition();
+                    }
+                }
+
+                @RequiresApi(api = Build.VERSION_CODES.N)
+                @Override
+                public void onResults(Bundle results) {
+                    // Called when speech recognition results are available
+                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    Log.i("NoCommand","nu am comanda");
+                        String command = matches.get(0);
+                        Log.i("voiceCommand", command);
+                        actionsFromVoiceInput(command);
+
+                    startSpeechRecognition();
+                }
+
+                @Override
+                public void onPartialResults(Bundle partialResults) {
+                    // Called when partial recognition results are available
+                }
+
+                @Override
+                public void onEvent(int eventType, Bundle params) {
+                    // Called when a speech recognition event occurs
+                }
+            });
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void actionsFromVoiceInput(String command) {
+        String commandToLowerCase = command.toLowerCase();
+
+        if (commandToLowerCase.startsWith("set note ")){
+            if (mySwitch.isChecked()){
+                addToQueue("Can't select a specific note if auto mode is enabled");
+                processTextQueue();
+            } else {
+                String[] splited = commandToLowerCase.split("\\s+");
+                String note = splited[splited.length-1];
+                List<String> displayedValues = asList(getNotes());
+
+                referencePosition = IntStream.range(0, displayedValues.size())
+                        .filter(i -> Objects.equals(displayedValues.get(i).toLowerCase(), note.toLowerCase()))
+                        .findFirst()
+                        .orElse(-1);
+                referencePosition++;
+                speakSelectedNote(referencePosition);
+
+                TunerView tunerView = this.findViewById(R.id.pitch);
+                tunerView.invalidate();
+            }
+        }
+
+        if (commandToLowerCase.startsWith("set reference ")){
+            String[] splited = commandToLowerCase.split("\\s+");
+            int referenceToBeSet = Integer.parseInt(splited[splited.length-1]);
+            if (referenceToBeSet >= 400 && referenceToBeSet <= 500) {
+                addReferencePitch(referenceToBeSet);
+            }else {
+                addToQueue("Invalid value. The reference needs to be between 400 and 500");
+                processTextQueue();
+            }
+        }
+
+        if (commandToLowerCase.startsWith("set tuning ")){
+            String[] splited = commandToLowerCase.split("\\s+");
+            StringBuilder tuningMode = new StringBuilder();
+            for (int i = 3; i <= splited.length-1; i ++){
+                tuningMode.append(splited[i]);
+                tuningMode.append(" ");
+            }
+            tuningMode.deleteCharAt(tuningMode.length() - 1);
+            final SharedPreferences preferences = getSharedPreferences(PREFS_FILE, MODE_PRIVATE);
+            MaterialSpinnerAdapter<String> adapterForVoice = new MaterialSpinnerAdapter<>(this, asList(getResources().getStringArray(R.array.tuningsVoiceInput)));
+            MaterialSpinnerAdapter<String> adapter = new MaterialSpinnerAdapter<>(this, asList(getResources().getStringArray(R.array.tunings)));
+
+
+            List<String> tuningModes = adapterForVoice.getItems();
+            Log.i("TuningModes", tuningModes.toString());
+            Log.i("tunningFromCommnad", tuningMode.toString());
+            int position = IntStream.range(0, tuningModes.size())
+                    .filter(i -> Objects.equals(tuningModes.get(i).toLowerCase(), tuningMode.toString().toLowerCase()))
+                    .findFirst()
+                    .orElse(-1);
+            Log.i("Position", String.valueOf(position));
+
+            if (position == -1){
+                addToQueue("Invalid tuning mode");
+                processTextQueue();
+            } else {
+                Log.i("positionExists", "intr aici");
+                tuningPositionSet(position,preferences,adapter);
+                MaterialSpinner spinner = findViewById(R.id.tuning);
+                spinner.setAdapter(adapter);
+                spinner.setSelectedIndex(position);
+            }
+        }
+
+        switch (commandToLowerCase) {
+            case "start":
+            case "continue":
+            case "again":
+                if (listenerFragment != null){
+                    listenerFragment.restartRecording();
+                } else {
+                    startRecording();
+                }
+             break;
+
+            case "yes":
+            case "help":
+                addToQueue(helpCommands());
+                processTextQueue();
+             break;
+
+            case "no":
+                addToQueue("You can begin tuning. The settings are " + getWelcomeMessage());
+                processTextQueue();
+             break;
+
+            case "enable":
+                mySwitch.setChecked(true);
+             break;
+
+            case "disable":
+                mySwitch.setChecked(false);
+             break;
+        }
+    }
+
+    private String helpCommands(){
+        return "There are 14 tuning modes. The list of them is: Chromatic, Guitar standard, Guitar Drop D, Guitar Drop C, Guitar Drop C#, Guitar Open G, Bass standard, Bass Drop C, " +
+                "Ukulele standard, Ukulele D tuning, Violin, Cello, Viola, Banjo. To select one of them say: select tuning to and the name of it." +
+                "You can set the reference pitch by saying set reference to and the number you want." +
+                "Tuning app has auto mode that automatically detects the chord or note you played. You can disable it by saying disable and you can enable it by saying enable." +
+                "Before playing any note or chord say one of the following: start, again or continue." +
+                "If you forgot any command just say help and this message will be played again." +
+                "You can begin tuning. The settings are " + getWelcomeMessage();
     }
 
 }

@@ -87,15 +87,20 @@ public class ListenerFragment extends Fragment {
         }
     }
 
+
     interface TaskCallbacks {
         //clasa care implementeaza TaskCallbacks permite sa primeasca date asincron de la o clasa asincrona
         void onProgressUpdate(PitchDifference percent);
     }
 
     public void stopRecording() {
-        if (isRecording) {
-            pitchListener.cancel(true);
-            isRecording = false;
+        pitchListener.cancel(true);
+    }
+
+    public void restartRecording(){
+        if (pitchListener.isCancelled()) {
+            pitchListener = new PitchListener();
+            pitchListener.execute();
         }
     }
 
